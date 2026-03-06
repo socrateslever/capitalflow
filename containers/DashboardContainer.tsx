@@ -35,9 +35,16 @@ export const DashboardContainer: React.FC<DashboardContainerProps> = ({
   
   // LÓGICA DE FILTRAGEM DE EQUIPE
   const scopeLoans = useMemo(() => {
-    if (!activeUser || activeUser.accessLevel !== 1) return loans;
-    if (selectedStaffId === 'ALL') return loans;
-    return loans.filter(l => l.operador_responsavel_id === selectedStaffId);
+    if (!activeUser) return [];
+    
+    // Se for ADMIN, pode ver tudo ou filtrar por staff selecionado
+    if (activeUser.accessLevel === 'ADMIN' || (activeUser as any).accessLevel === 1) {
+      if (selectedStaffId === 'ALL') return loans;
+      return loans.filter(l => l.operador_responsavel_id === selectedStaffId);
+    }
+    
+    // Se for OPERATOR, vê apenas os seus
+    return loans.filter(l => l.owner_id === activeUser.id || l.operador_responsavel_id === activeUser.id);
   }, [loans, selectedStaffId, activeUser]);
 
   const filteredLoans = useMemo(() => filterLoans(scopeLoans, searchTerm, statusFilter, ui.sortOption), [scopeLoans, searchTerm, statusFilter, ui.sortOption]);

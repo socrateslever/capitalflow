@@ -6,29 +6,23 @@ import { getDaysDiff, parseDateOnlyUTC } from '../../utils/dateHelpers';
 
 // Função auxiliar para determinar se um contrato está "efetivamente pago"
 const isLoanFullyPaid = (l: Loan): boolean => {
-    // 1. Verificação Padrão
+    // Se não tem parcelas, não pode estar pago (evita esconder contratos novos ou em carregamento)
+    if (!l.installments || l.installments.length === 0) return false;
+
+    // 1. Verificação Padrão: Todas as parcelas marcadas como PAID
     const allPaidStatus = l.installments.every(i => i.status === LoanStatus.PAID);
     if (allPaidStatus) return true;
 
     // 2. Verificação de Prazo Fixo Finalizado (Sem dívida)
     if (l.billingCycle === 'DAILY_FIXED_TERM') {
-        const totalDebt = l.installments.reduce((acc, i) => acc + i.principalRemaining + i.interestRemaining, 0);
+        const totalDebt = l.installments.reduce((acc, i) => acc + (i.principalRemaining || 0) + (i.interestRemaining || 0), 0);
         
-        // Verifica se completou o ciclo de dias
-        const start = parseDateOnlyUTC(l.startDate);
-        const end = parseDateOnlyUTC(l.installments[0].dueDate);
-        const msPerDay = 1000 * 60 * 60 * 24;
-        const totalDays = Math.round((end.getTime() - start.getTime()) / msPerDay);
-        
-        const dailyValue = (l.totalToReceive || 0) / (totalDays || 1);
-        const amountPaid = Math.max(0, (l.totalToReceive || 0) - totalDebt);
-        const paidDays = dailyValue > 0 ? Math.floor((amountPaid + 0.1) / dailyValue) : 0;
-
-        if (paidDays >= totalDays) return true;
+        // Se o saldo devedor for zero ou desprezível, considera pago
+        if (totalDebt < 0.10) return true;
     }
 
-    // 3. Verificação de Resíduo (Tolerância de R$ 0.10)
-    const totalRemaining = l.installments.reduce((acc, i) => acc + i.principalRemaining + i.interestRemaining, 0);
+    // 3. Verificação de Resíduo Geral (Tolerância de R$ 0.10)
+    const totalRemaining = l.installments.reduce((acc, i) => acc + (i.principalRemaining || 0) + (i.interestRemaining || 0), 0);
     if (totalRemaining < 0.10) return true;
 
     return false;
