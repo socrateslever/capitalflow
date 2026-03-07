@@ -302,6 +302,7 @@ export const App: React.FC = () => {
                 loanCtrl={loanCtrl}
                 showToast={showToast}
                 ui={ui}
+                goBack={goBack}
               />
             )}
 
@@ -311,11 +312,12 @@ export const App: React.FC = () => {
                 showToast={showToast}
                 onRefresh={() => fetchFullData(activeUser?.id || '')}
                 ui={ui}
+                goBack={goBack}
               />
             )}
 
             {activeTab === 'SOURCES' && (
-              <SourcesContainer loans={loans} sources={sources} ui={ui} sourceCtrl={sourceCtrl} loanCtrl={loanCtrl} />
+              <SourcesContainer loans={loans} sources={sources} ui={ui} sourceCtrl={sourceCtrl} loanCtrl={loanCtrl} goBack={goBack} />
             )}
 
             {activeTab === 'PROFILE' && activeUser && (
@@ -334,6 +336,7 @@ export const App: React.FC = () => {
                 navOrder={navOrder}
                 hubOrder={hubOrder}
                 saveNavConfig={saveNavConfig}
+                goBack={goBack}
               />
             )}
 
@@ -355,7 +358,7 @@ export const App: React.FC = () => {
               <PersonalFinancesPage activeUser={activeUser} goBack={goBack} />
             )}
 
-            {activeTab === 'LEADS' && activeUser && <LeadsPage activeUser={activeUser} />}
+            {activeTab === 'LEADS' && activeUser && <LeadsPage activeUser={activeUser} goBack={goBack} />}
 
             {activeTab === 'ACQUISITION' && <CustomerAcquisitionPage activeUser={activeUser} goBack={goBack} />}
 

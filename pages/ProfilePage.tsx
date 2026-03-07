@@ -19,6 +19,7 @@ import {
   Shield,
   User,
   Download,
+  ChevronLeft,
 } from 'lucide-react';
 
 import type { AppTab, Loan, UserProfile, Client, CapitalSource } from '../types';
@@ -51,6 +52,7 @@ interface ProfilePageProps {
   navOrder: AppTab[];
   hubOrder: AppTab[];
   saveNavConfig: (nav: AppTab[], hub: AppTab[]) => void;
+  goBack?: () => void;
 }
 
 export const ProfilePage: React.FC<ProfilePageProps> = ({
@@ -69,6 +71,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
   navOrder,
   hubOrder,
   saveNavConfig,
+  goBack,
 }) => {
   const { backupRestoreRef, auditLogs } = useProfilePageLogic(loans);
 
@@ -136,7 +139,35 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
   if (!profileEditForm) return null;
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+    <div className="space-y-8 pb-20 max-w-7xl mx-auto animate-in fade-in">
+      {/* HEADER PADRONIZADO */}
+      <div className="flex flex-col lg:flex-row justify-between items-stretch lg:items-center gap-6 bg-slate-900 border border-slate-800 p-5 sm:p-6 rounded-[2rem] sm:rounded-[2.5rem] shadow-xl">
+        <div className="flex items-center gap-3 sm:gap-4 min-w-0">
+          {goBack && (
+            <button
+              onClick={goBack}
+              className="p-2 bg-slate-950 border border-slate-800 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-all active:scale-95 shadow-lg shrink-0"
+              title="Voltar"
+            >
+              <ChevronLeft size={20} />
+            </button>
+          )}
+
+          <div className="p-3 sm:p-4 bg-indigo-600 rounded-xl sm:rounded-2xl text-white shadow-lg shadow-indigo-900/20 shrink-0">
+            <User size={24} className="sm:w-7 sm:h-7" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <h2 className="text-lg sm:text-2xl font-black uppercase text-white tracking-tighter leading-none truncate">
+              Meu Perfil
+            </h2>
+            <p className="text-[10px] sm:text-xs text-slate-500 font-bold uppercase mt-1 tracking-widest truncate">
+              Configurações e Preferências da Conta
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
       {/* SIDEBAR */}
       <div className="lg:col-span-4 space-y-6">
         <div className="bg-slate-900 border border-slate-800 p-6 rounded-[2.5rem] relative overflow-hidden">
@@ -792,5 +823,6 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
         </div>
       </div>
     </div>
+  </div>
   );
 };

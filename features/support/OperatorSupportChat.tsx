@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { ShieldCheck, X, MessageCircle, Palette } from 'lucide-react';
+import { ShieldCheck, X, MessageCircle, Palette, ChevronLeft } from 'lucide-react';
 import { supportChatService } from '../../services/supportChat.service';
 import { ChatSidebar } from './components/ChatSidebar';
 import { useCampaignChat } from '../../hooks/useCampaignChat';
@@ -151,6 +151,14 @@ export const OperatorSupportChat = ({ activeUser, onClose }: { activeUser: any; 
       {/* HEADER */}
       <div className="h-16 border-b border-slate-800 bg-slate-950 flex items-center justify-between px-4 sm:px-6 shrink-0">
         <div className="flex items-center gap-3">
+          <button
+            onClick={onClose}
+            className="p-2 bg-slate-900 border border-slate-800 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-all active:scale-95 shadow-lg shrink-0"
+            title="Voltar"
+          >
+            <ChevronLeft size={20} />
+          </button>
+
           <div className="w-9 h-9 bg-blue-600 rounded-lg flex items-center justify-center text-white shadow-lg shadow-blue-900/50">
              <ShieldCheck size={20}/>
           </div>

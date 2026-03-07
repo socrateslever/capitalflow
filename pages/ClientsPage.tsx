@@ -1,5 +1,5 @@
 import React from 'react';
-import { Plus, Search, Edit, Trash2, CheckSquare, Square, XCircle, MapPin, Phone } from 'lucide-react';
+import { Plus, Search, Edit, Trash2, CheckSquare, Square, XCircle, MapPin, Phone, ChevronLeft, Users } from 'lucide-react';
 import { Client } from '../types';
 import { startDictation } from '../utils/speech';
 
@@ -17,34 +17,57 @@ interface ClientsPageProps {
   toggleClientSelection: (id: string) => void;
   executeBulkDelete: () => void;
   onDeleteClient: (id: string) => void; // NOVO PROP
+  goBack?: () => void;
 }
 
 export const ClientsPage: React.FC<ClientsPageProps> = ({ 
   filteredClients, clientSearchTerm, setClientSearchTerm, 
   openClientModal, openConfirmation, showToast,
   isBulkDeleteMode, toggleBulkDeleteMode, selectedClientsToDelete, toggleClientSelection, executeBulkDelete,
-  onDeleteClient
+  onDeleteClient,
+  goBack
 }) => {
   return (
-    <div className="space-y-6">
-        <div className="flex justify-between items-center flex-wrap gap-2">
-            <h2 className="text-xl font-black uppercase tracking-tighter text-white">Carteira de Clientes</h2>
-            <div className="flex gap-2">
+    <div className="space-y-6 animate-in fade-in">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div className="flex items-center gap-4">
+                {goBack && (
+                    <button
+                        onClick={goBack}
+                        className="p-2 bg-slate-900 border border-slate-800 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-all active:scale-95 shadow-lg"
+                        title="Voltar"
+                    >
+                        <ChevronLeft size={20} />
+                    </button>
+                )}
+
+                <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-600 to-violet-600 flex items-center justify-center text-white shrink-0 shadow-lg shadow-indigo-900/20">
+                        <Users size={20} />
+                    </div>
+                    <div>
+                        <h1 className="text-sm font-black text-white uppercase tracking-wider leading-none">Carteira de Clientes</h1>
+                        <p className="text-[10px] text-slate-500 font-bold uppercase mt-1 tracking-widest">Gestão de Base Ativa</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div className="flex gap-2 w-full md:w-auto">
                 {isBulkDeleteMode ? (
-                    <div className="flex gap-2 animate-in fade-in slide-in-from-right">
-                        <button onClick={executeBulkDelete} disabled={selectedClientsToDelete.length === 0} className="px-4 py-2 bg-rose-600 text-white rounded-xl text-[10px] font-black uppercase hover:bg-rose-500 transition-all shadow-lg flex items-center gap-2 disabled:opacity-50">
+                    <div className="flex gap-2 w-full md:w-auto animate-in fade-in slide-in-from-right">
+                        <button onClick={executeBulkDelete} disabled={selectedClientsToDelete.length === 0} className="flex-1 md:flex-none px-4 py-2 bg-rose-600 text-white rounded-xl text-[10px] font-black uppercase hover:bg-rose-500 transition-all shadow-lg flex items-center justify-center gap-2 disabled:opacity-50">
                             <Trash2 size={16}/> Confirmar ({selectedClientsToDelete.length})
                         </button>
-                        <button onClick={toggleBulkDeleteMode} className="px-4 py-2 bg-slate-800 text-white rounded-xl text-[10px] font-black uppercase hover:bg-slate-700 transition-all flex items-center gap-2">
+                        <button onClick={toggleBulkDeleteMode} className="flex-1 md:flex-none px-4 py-2 bg-slate-800 text-white rounded-xl text-[10px] font-black uppercase hover:bg-slate-700 transition-all flex items-center justify-center gap-2">
                             <XCircle size={16}/> Cancelar
                         </button>
                     </div>
                 ) : (
                     <>
-                        <button onClick={toggleBulkDeleteMode} className="px-4 py-2 bg-slate-800 border border-slate-700 text-rose-400 rounded-xl text-[10px] font-black uppercase hover:bg-rose-900/20 hover:border-rose-500 transition-all flex items-center gap-2">
+                        <button onClick={toggleBulkDeleteMode} className="flex-1 md:flex-none px-4 py-2 bg-slate-800 border border-slate-700 text-rose-400 rounded-xl text-[10px] font-black uppercase hover:bg-rose-900/20 hover:border-rose-500 transition-all flex items-center justify-center gap-2">
                             <Trash2 size={16}/> Excluir Vários
                         </button>
-                        <button onClick={() => openClientModal()} className="px-4 py-2 bg-blue-600 text-white rounded-xl text-[10px] font-black uppercase hover:bg-blue-500 transition-all shadow-lg shadow-blue-600/20 flex items-center gap-2">
+                        <button onClick={() => openClientModal()} className="flex-1 md:flex-none px-4 py-2 bg-blue-600 text-white rounded-xl text-[10px] font-black uppercase hover:bg-blue-500 transition-all shadow-lg shadow-blue-600/20 flex items-center justify-center gap-2">
                             <Plus size={16}/> Novo Cliente
                         </button>
                     </>

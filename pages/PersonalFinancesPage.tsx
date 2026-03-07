@@ -107,10 +107,10 @@ export const PersonalFinancesPage: React.FC<Props> = ({ activeUser, setActiveTab
                 <div className="flex items-center gap-4">
                     <button
                         onClick={() => goBack ? goBack() : setActiveTab?.('DASHBOARD')}
-                        className="flex items-center gap-2 px-4 py-2 bg-slate-900 border border-slate-800 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-all active:scale-95"
+                        className="p-2 bg-slate-900 border border-slate-800 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-all active:scale-95 shadow-lg"
+                        title="Voltar"
                     >
-                        <ChevronLeft size={16} />
-                        <span className="text-[10px] font-black uppercase tracking-widest">Voltar</span>
+                        <ChevronLeft size={20} />
                     </button>
                     
                     <div className="flex items-center gap-3">

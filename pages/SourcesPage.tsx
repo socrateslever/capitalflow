@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import PixDepositModal from "../components/modals/PixDepositModal";
 import { CapitalSource, Loan } from "../types";
-import { Plus } from 'lucide-react';
+import { Plus, ChevronLeft, Wallet } from 'lucide-react';
 import { Modal } from '../components/ui/Modal';
 import { SourceCard } from '../components/cards/SourceCard';
 
@@ -17,6 +17,7 @@ interface SourcesPageProps {
 
   // ✅ NOVO: abre o modal PIX (fica no Container)
   onOpenPixDeposit: (source: CapitalSource) => void;
+  goBack?: () => void;
 }
 
 export const SourcesPage: React.FC<SourcesPageProps> = ({
@@ -26,7 +27,8 @@ export const SourcesPage: React.FC<SourcesPageProps> = ({
   handleUpdateSourceBalance,
   isStealthMode,
   ui,
-  onOpenPixDeposit
+  onOpenPixDeposit,
+  goBack
 }) => {
 
   // ✅ "Adicionar saldo" agora chama PIX
@@ -39,15 +41,33 @@ export const SourcesPage: React.FC<SourcesPageProps> = ({
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-xl font-black uppercase tracking-tighter text-white">
-          Fontes de Capital
-        </h2>
+    <div className="space-y-6 animate-in fade-in">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div className="flex items-center gap-4">
+          {goBack && (
+            <button
+              onClick={goBack}
+              className="p-2 bg-slate-900 border border-slate-800 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-all active:scale-95 shadow-lg"
+              title="Voltar"
+            >
+              <ChevronLeft size={20} />
+            </button>
+          )}
+
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-600 to-teal-600 flex items-center justify-center text-white shrink-0 shadow-lg shadow-emerald-900/20">
+              <Wallet size={20} />
+            </div>
+            <div>
+              <h1 className="text-sm font-black text-white uppercase tracking-wider leading-none">Fontes de Capital</h1>
+              <p className="text-[10px] text-slate-500 font-bold uppercase mt-1 tracking-widest">Gestão de Fundos e Liquidez</p>
+            </div>
+          </div>
+        </div>
 
         <button
           onClick={() => ui.openModal('SOURCE_FORM')}
-          className="px-4 py-2 bg-blue-600 text-white rounded-xl text-[10px] font-black uppercase hover:bg-blue-500 transition-all shadow-lg shadow-blue-600/20 flex items-center gap-2"
+          className="w-full md:w-auto px-6 py-3 bg-blue-600 text-white rounded-xl text-[10px] font-black uppercase hover:bg-blue-500 transition-all shadow-lg shadow-blue-600/20 flex items-center justify-center gap-2"
         >
           <Plus size={16} /> Nova Fonte
         </button>

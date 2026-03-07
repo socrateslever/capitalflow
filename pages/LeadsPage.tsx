@@ -4,9 +4,9 @@ import { Lead } from '../types';
 import { supabase } from '../lib/supabase';
 import { buildWhatsAppLink } from '../utils/whatsapp';
 import { formatMoney, maskPhone } from '../utils/formatters';
-import { MessageCircle, Clock, CheckCircle2, XCircle, Loader2, User } from 'lucide-react';
+import { MessageCircle, Clock, CheckCircle2, XCircle, Loader2, User, ChevronLeft } from 'lucide-react';
 
-export const LeadsPage: React.FC<{ activeUser: any }> = ({ activeUser }) => {
+export const LeadsPage: React.FC<{ activeUser: any; goBack?: () => void }> = ({ activeUser, goBack }) => {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -61,13 +61,31 @@ export const LeadsPage: React.FC<{ activeUser: any }> = ({ activeUser }) => {
 
   return (
     <div className="space-y-6 animate-in fade-in">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-black text-white uppercase tracking-tighter">Leads</h1>
-          <p className="text-slate-500 text-xs font-bold uppercase tracking-widest">Solicitações de Empréstimo</p>
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div className="flex items-center gap-4">
+          {goBack && (
+            <button
+              onClick={goBack}
+              className="p-2 bg-slate-900 border border-slate-800 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-all active:scale-95 shadow-lg"
+              title="Voltar"
+            >
+              <ChevronLeft size={20} />
+            </button>
+          )}
+
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white shrink-0 shadow-lg shadow-blue-900/20">
+              <MessageCircle size={20} />
+            </div>
+            <div>
+              <h1 className="text-sm font-black text-white uppercase tracking-wider leading-none">Captação de Clientes</h1>
+              <p className="text-[10px] text-slate-500 font-bold uppercase mt-1 tracking-widest">Solicitações de Empréstimo</p>
+            </div>
+          </div>
         </div>
+
         <div className="bg-slate-900 px-4 py-2 rounded-xl border border-slate-800">
-           <span className="text-xs font-bold text-white">{leads.filter(l => l.status === 'NOVO').length} Novos</span>
+           <span className="text-[10px] font-black uppercase tracking-widest text-white">{leads.filter(l => l.status === 'NOVO').length} Novos</span>
         </div>
       </div>
 

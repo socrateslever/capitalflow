@@ -104,19 +104,19 @@ export const SourceCard: React.FC<SourceCardProps> = ({
                         {/* Área do Logo / Ícone Pequeno */}
                         <button 
                             onClick={handleUpdateLogo}
-                            className={`w-8 h-8 rounded-lg flex items-center justify-center overflow-hidden ${bgClass} ${colorClass} shrink-0 hover:ring-2 ring-blue-500/50 transition-all`}
+                            className={`w-8 h-8 rounded-lg flex items-center justify-center overflow-hidden bg-slate-950 border border-slate-800 shrink-0 hover:border-slate-600 transition-all`}
                             title="Clique para alterar o ícone"
                         >
                             {logoUrl && !imgError && source.type !== 'CARD' ? (
                                 <img 
                                     src={logoUrl} 
                                     alt={source.name} 
-                                    className="w-full h-full object-cover"
+                                    className="w-full h-full object-contain p-1"
                                     onError={() => setImgError(true)}
                                     referrerPolicy="no-referrer"
                                 />
                             ) : (
-                                <DefaultIcon size={16} />
+                                <DefaultIcon size={14} className={colorClass} />
                             )}
                         </button>
 
