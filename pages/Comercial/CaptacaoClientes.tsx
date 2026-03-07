@@ -216,21 +216,13 @@ export const CustomerAcquisitionPage: React.FC<{ activeUser: UserProfile | null,
       {/* HEADER COM TOGGLE */}
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-6 shrink-0">
         <div className="flex items-center gap-4">
-          <button
-            onClick={() => goBack ? goBack() : window.history.back()}
-            className="flex items-center gap-2 px-4 py-2 bg-slate-900 border border-slate-800 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-all active:scale-95"
-          >
-            <ChevronLeft size={16} />
-            <span className="text-[10px] font-black uppercase tracking-widest">Voltar</span>
-          </button>
-          
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 bg-orange-500/10 rounded-full flex items-center justify-center text-orange-500 border border-orange-500/20">
-              <Megaphone size={24}/>
+            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-orange-500 to-amber-500 flex items-center justify-center text-white shrink-0 shadow-lg shadow-orange-900/20">
+              <Megaphone size={20}/>
             </div>
             <div>
-              <h1 className="text-2xl font-black text-white uppercase tracking-tighter">Captação de Clientes</h1>
-              <p className="text-slate-500 text-xs font-bold uppercase tracking-widest">
+              <h1 className="text-xl font-semibold text-white uppercase tracking-wider leading-none">Captação de <span className="text-blue-500">Clientes</span></h1>
+              <p className="text-sm text-slate-500 font-medium uppercase mt-1 tracking-widest">
                 {activeMode === 'CHAT' ? 'Gerenciamento de Leads' : 'Gerador de Campanhas'}
               </p>
             </div>
@@ -240,13 +232,13 @@ export const CustomerAcquisitionPage: React.FC<{ activeUser: UserProfile | null,
         <div className="flex bg-slate-900 p-1 rounded-xl border border-slate-800">
           <button 
             onClick={() => setActiveMode('CHAT')}
-            className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${activeMode === 'CHAT' ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-500 hover:text-white'}`}
+            className={`px-4 py-2 rounded-lg text-sm font-semibold uppercase tracking-widest transition-all ${activeMode === 'CHAT' ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-500 hover:text-white'}`}
           >
             Atendimento
           </button>
           <button 
             onClick={() => setActiveMode('CAMPAIGNS')}
-            className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${activeMode === 'CAMPAIGNS' ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-500 hover:text-white'}`}
+            className={`px-4 py-2 rounded-lg text-sm font-semibold uppercase tracking-widest transition-all ${activeMode === 'CAMPAIGNS' ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-500 hover:text-white'}`}
           >
             Campanhas
           </button>
@@ -263,7 +255,7 @@ export const CustomerAcquisitionPage: React.FC<{ activeUser: UserProfile | null,
                 <input 
                   type="text"
                   placeholder="Buscar lead..."
-                  className="w-full bg-slate-950 border border-slate-800 pl-10 pr-4 py-2 rounded-xl text-xs font-bold text-white outline-none focus:border-blue-500 transition-colors"
+                  className="w-full bg-slate-950 border border-slate-800 pl-10 pr-4 py-2 rounded-xl text-sm font-medium text-white outline-none focus:border-blue-500 transition-colors"
                   value={searchTerm}
                   onChange={e => setSearchTerm(e.target.value)}
                 />
@@ -288,24 +280,24 @@ export const CustomerAcquisitionPage: React.FC<{ activeUser: UserProfile | null,
                     className={`w-full p-4 rounded-2xl text-left transition-all border relative overflow-hidden ${selectedSession?.id === lead.id ? 'bg-blue-600 border-blue-500 shadow-lg shadow-blue-600/20' : 'bg-slate-950/50 border-slate-800 hover:border-slate-700'}`}
                   >
                     {lead.status === 'NOVO' && (
-                      <div className="absolute top-0 right-0 bg-amber-500 text-black text-[8px] font-black uppercase px-2 py-0.5 rounded-bl-lg shadow-sm">
+                      <div className="absolute top-0 right-0 bg-amber-500 text-black text-[10px] font-black uppercase px-2 py-0.5 rounded-bl-lg shadow-sm">
                         Novo
                       </div>
                     )}
                     <div className="flex items-center justify-between mb-1">
-                      <span className={`text-xs font-black uppercase truncate ${selectedSession?.id === lead.id ? 'text-white' : 'text-slate-200'}`}>
+                      <span className={`text-sm font-semibold uppercase truncate ${selectedSession?.id === lead.id ? 'text-white' : 'text-slate-200'}`}>
                         {lead.nome || 'Sem Nome'}
                       </span>
-                      <span className={`text-[9px] font-bold ${selectedSession?.id === lead.id ? 'text-blue-200' : 'text-slate-500'}`}>
+                      <span className={`text-sm font-medium ${selectedSession?.id === lead.id ? 'text-blue-200' : 'text-slate-500'}`}>
                         {new Date(lead.created_at).toLocaleDateString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
                       </span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className={`text-[10px] font-bold ${selectedSession?.id === lead.id ? 'text-blue-100' : 'text-slate-400'}`}>
+                      <span className={`text-sm font-medium ${selectedSession?.id === lead.id ? 'text-blue-100' : 'text-slate-400'}`}>
                         {maskPhone(lead.whatsapp)}
                       </span>
                       {lead.requested_amount && (
-                        <span className={`text-[10px] font-black ${selectedSession?.id === lead.id ? 'text-white' : 'text-emerald-500'}`}>
+                        <span className={`text-sm font-black ${selectedSession?.id === lead.id ? 'text-white' : 'text-emerald-500'}`}>
                           {formatMoney(lead.requested_amount)}
                         </span>
                       )}
@@ -327,8 +319,8 @@ export const CustomerAcquisitionPage: React.FC<{ activeUser: UserProfile | null,
                       <User size={20}/>
                     </div>
                     <div>
-                      <h3 className="text-sm font-black text-white uppercase tracking-tight">{selectedSession.nome || 'Lead s/ Nome'}</h3>
-                      <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{maskPhone(selectedSession.whatsapp)}</p>
+                      <h3 className="text-sm font-semibold text-white uppercase tracking-tight">{selectedSession.nome || 'Lead s/ Nome'}</h3>
+                      <p className="text-sm font-medium text-slate-500 uppercase tracking-widest">{maskPhone(selectedSession.whatsapp)}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
@@ -458,8 +450,8 @@ export const CustomerAcquisitionPage: React.FC<{ activeUser: UserProfile | null,
                   <Megaphone size={20}/>
                 </div>
                 <div>
-                  <h2 className="text-lg font-black text-white uppercase tracking-tighter">Minhas Campanhas</h2>
-                  <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest">Gerencie seus links de captação</p>
+                  <h2 className="text-xl font-semibold text-white uppercase tracking-tighter">Minhas Campanhas</h2>
+                  <p className="text-sm text-slate-500 font-medium uppercase tracking-widest">Gerencie seus links de captação</p>
                 </div>
               </div>
               
@@ -593,14 +585,14 @@ export const CustomerAcquisitionPage: React.FC<{ activeUser: UserProfile | null,
                       
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
-                          <h3 className="text-white font-bold text-lg truncate">{campaign.name}</h3>
+                          <h3 className="text-white font-semibold text-sm truncate">{campaign.name}</h3>
                           <span className="px-2 py-0.5 bg-slate-950 rounded text-[10px] font-bold uppercase text-slate-400 border border-slate-800">
                             {campaign.source}
                           </span>
                         </div>
-                        <p className="text-slate-500 text-xs truncate mb-3">{campaign.description || 'Sem descrição'}</p>
+                        <p className="text-slate-500 text-sm truncate mb-3">{campaign.description || 'Sem descrição'}</p>
                         
-                        <div className="flex items-center gap-4 text-[10px] text-slate-400 font-bold uppercase tracking-wider bg-slate-950/50 p-2 rounded-lg w-fit">
+                        <div className="flex items-center gap-4 text-sm text-slate-400 font-medium uppercase tracking-wider bg-slate-950/50 p-2 rounded-lg w-fit">
                           <span className="flex items-center gap-1"><Calendar size={12}/> {new Date(campaign.createdAt).toLocaleDateString()}</span>
                           <span className="flex items-center gap-1 text-blue-400"><MousePointer2 size={12}/> {campaign.clicks || 0} Cliques</span>
                           <span className="flex items-center gap-1 text-emerald-400"><MessageCircle size={12}/> {campaign.leads || 0} Leads</span>

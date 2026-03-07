@@ -7,11 +7,16 @@ export const SettingsPage: React.FC = () => {
         <div className="space-y-8 animate-in fade-in duration-500">
             {/* HEADER */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                <div>
-                    <h2 className="text-2xl font-black uppercase tracking-tighter text-white flex items-center gap-2">
-                        <Settings className="text-slate-400" size={28}/> Ajustes & Sistema
-                    </h2>
-                    <p className="text-slate-500 text-xs font-bold uppercase tracking-widest mt-1">Documentação Técnica e Configurações</p>
+                <div className="flex items-center gap-4">
+                     <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-slate-600 to-slate-700 flex items-center justify-center text-white shrink-0 shadow-lg shadow-slate-900/20">
+                            <Settings size={20} />
+                        </div>
+                        <div>
+                            <h1 className="text-xl font-semibold text-white uppercase tracking-wider leading-none">Ajustes & <span className="text-blue-500">Sistema</span></h1>
+                            <p className="text-sm text-slate-500 font-medium uppercase mt-1 tracking-widest">Documentação Técnica e Configurações</p>
+                        </div>
+                    </div>
                 </div>
             </div>
 

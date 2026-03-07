@@ -60,32 +60,22 @@ export const LeadsPage: React.FC<{ activeUser: any; goBack?: () => void }> = ({ 
   if (loading) return <div className="flex justify-center p-10"><Loader2 className="animate-spin text-blue-500" /></div>;
 
   return (
-    <div className="space-y-6 animate-in fade-in">
+    <div className="space-y-6 animate-in fade-in font-sans pb-24">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div className="flex items-center gap-4">
-          {goBack && (
-            <button
-              onClick={goBack}
-              className="p-2 bg-slate-900 border border-slate-800 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-all active:scale-95 shadow-lg"
-              title="Voltar"
-            >
-              <ChevronLeft size={20} />
-            </button>
-          )}
-
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white shrink-0 shadow-lg shadow-blue-900/20">
               <MessageCircle size={20} />
             </div>
             <div>
-              <h1 className="text-sm font-black text-white uppercase tracking-wider leading-none">Captação de Clientes</h1>
-              <p className="text-[10px] text-slate-500 font-bold uppercase mt-1 tracking-widest">Solicitações de Empréstimo</p>
+              <h1 className="text-xl font-semibold text-white uppercase tracking-wider leading-none">Captação de <span className="text-blue-500">Clientes</span></h1>
+              <p className="text-sm text-slate-500 font-medium uppercase mt-1 tracking-widest">Solicitações de Empréstimo</p>
             </div>
           </div>
         </div>
 
         <div className="bg-slate-900 px-4 py-2 rounded-xl border border-slate-800">
-           <span className="text-[10px] font-black uppercase tracking-widest text-white">{leads.filter(l => l.status === 'NOVO').length} Novos</span>
+           <span className="text-sm font-semibold uppercase tracking-widest text-white">{leads.filter(l => l.status === 'NOVO').length} Novos</span>
         </div>
       </div>
 
@@ -100,21 +90,21 @@ export const LeadsPage: React.FC<{ activeUser: any; goBack?: () => void }> = ({ 
                       <User size={20}/>
                    </div>
                    <div>
-                      <h3 className="text-white font-bold text-sm">{lead.nome || 'Sem Nome'}</h3>
-                      <p className="text-slate-500 text-xs">{maskPhone(lead.whatsapp)}</p>
+                      <h3 className="text-white font-semibold text-sm">{lead.nome || 'Sem Nome'}</h3>
+                      <p className="text-slate-500 text-sm">{maskPhone(lead.whatsapp)}</p>
                    </div>
                 </div>
              </div>
 
              <div className="mb-4">
-                <p className="text-[10px] text-slate-500 font-black uppercase">Valor Solicitado</p>
+                <p className="text-sm text-slate-500 font-semibold uppercase tracking-widest">Valor Solicitado</p>
                 <p className="text-xl font-black text-emerald-400">{formatMoney(lead.valor_solicitado)}</p>
              </div>
 
              <div className="flex gap-2">
                 <button 
                   onClick={() => openWhatsApp(lead)}
-                  className="flex-1 py-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-black uppercase text-[10px] flex items-center justify-center gap-2 transition-all"
+                  className="flex-1 py-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-black uppercase text-sm flex items-center justify-center gap-2 transition-all"
                 >
                    <MessageCircle size={14}/> Conversar
                 </button>
@@ -131,7 +121,7 @@ export const LeadsPage: React.FC<{ activeUser: any; goBack?: () => void }> = ({ 
                 )}
              </div>
 
-             <div className="mt-3 flex items-center justify-between text-[9px] font-bold uppercase text-slate-600">
+             <div className="mt-3 flex items-center justify-between text-sm font-medium uppercase text-slate-600">
                 <span className="flex items-center gap-1"><Clock size={10}/> {new Date(lead.created_at).toLocaleDateString('pt-BR')}</span>
                 <span className={`${lead.status === 'CONVERTIDO' ? 'text-blue-500' : lead.status === 'REJEITADO' ? 'text-rose-500' : 'text-slate-500'}`}>{lead.status}</span>
              </div>
@@ -140,7 +130,7 @@ export const LeadsPage: React.FC<{ activeUser: any; goBack?: () => void }> = ({ 
 
         {leads.length === 0 && (
           <div className="col-span-full py-20 text-center text-slate-500">
-             <p className="text-sm font-bold uppercase">Nenhum lead encontrado.</p>
+             <p className="text-sm font-semibold uppercase">Nenhum lead encontrado.</p>
           </div>
         )}
       </div>

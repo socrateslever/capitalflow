@@ -117,38 +117,38 @@ export const ContractDetailsPage: React.FC<ContractDetailsPageProps> = ({
         <div className="flex flex-col gap-6 animate-in fade-in duration-500 pb-24 md:pb-6">
             
             {/* TOPO FIXO / HEADER */}
-            <div className="bg-slate-900 border border-slate-800 rounded-[2rem] p-6 shadow-xl relative overflow-hidden">
-                <div className={`absolute top-0 left-0 w-full h-1 ${statusColor}`}></div>
-                
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-                    <div className="flex items-center gap-4">
-                        <button onClick={onBack} className="text-slate-500 hover:text-white transition-colors" title="Voltar">
-                            <ChevronLeft size={24}/>
-                        </button>
-                        <div>
-                            <div className="flex items-center gap-2 mb-1">
-                                <h1 className="text-xl font-black text-white uppercase tracking-tight">{loan.debtorName}</h1>
-                                <span className={`px-2 py-0.5 rounded-full text-[9px] font-black text-white uppercase tracking-widest ${statusColor}`}>
-                                    {status === 'OVERDUE' ? 'Atrasado' : status === 'PAID' ? 'Quitado' : 'Ativo'}
-                                </span>
-                            </div>
-                            <p className="text-xs text-slate-500 font-bold uppercase tracking-widest flex items-center gap-1">
-                                <User size={12}/> {loan.debtorPhone}
-                            </p>
-                        </div>
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div className="flex items-center gap-4">
+                    <div className={`w-10 h-10 rounded-full bg-gradient-to-br flex items-center justify-center text-white shrink-0 shadow-lg ${
+                        status === 'PAID' ? 'from-emerald-500 to-emerald-600 shadow-emerald-900/20' : 
+                        status === 'OVERDUE' ? 'from-rose-500 to-rose-600 shadow-rose-900/20' : 
+                        'from-blue-500 to-blue-600 shadow-blue-900/20'
+                    }`}>
+                        <FileText size={20} />
                     </div>
+                    <div>
+                        <div className="flex items-center gap-2 mb-1">
+                            <h1 className="text-xl font-semibold text-white uppercase tracking-tight">{loan.debtorName}</h1>
+                            <span className={`px-2 py-0.5 rounded-full text-[9px] font-black text-white uppercase tracking-widest ${statusColor}`}>
+                                {status === 'OVERDUE' ? 'Atrasado' : status === 'PAID' ? 'Quitado' : 'Ativo'}
+                            </span>
+                        </div>
+                        <p className="text-sm text-slate-500 font-medium uppercase tracking-widest flex items-center gap-1">
+                            <User size={12}/> {loan.debtorPhone}
+                        </p>
+                    </div>
+                </div>
 
-                    <div className="grid grid-cols-2 md:flex items-center gap-4 md:gap-8">
-                        <div className="space-y-1">
-                            <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Valor Principal</p>
-                            <p className="text-lg font-black text-white">{formatMoney(loan.principal, isStealthMode)}</p>
-                        </div>
-                        <div className="space-y-1 text-right md:text-left">
-                            <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Próximo Vencimento</p>
-                            <p className="text-lg font-black text-blue-400">
-                                {loan.installments.find(i => i.status !== 'PAID')?.dueDate ? new Date(loan.installments.find(i => i.status !== 'PAID')!.dueDate).toLocaleDateString('pt-BR') : 'N/A'}
-                            </p>
-                        </div>
+                <div className="grid grid-cols-2 md:flex items-center gap-4 md:gap-8">
+                    <div className="space-y-1">
+                        <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Valor Principal</p>
+                        <p className="text-lg font-black text-white">{formatMoney(loan.principal, isStealthMode)}</p>
+                    </div>
+                    <div className="space-y-1 text-right md:text-left">
+                        <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Próximo Vencimento</p>
+                        <p className="text-lg font-black text-blue-400">
+                            {loan.installments.find(i => i.status !== 'PAID')?.dueDate ? new Date(loan.installments.find(i => i.status !== 'PAID')!.dueDate).toLocaleDateString('pt-BR') : 'N/A'}
+                        </p>
                     </div>
                 </div>
             </div>
@@ -397,12 +397,9 @@ export const ContractDetailsPage: React.FC<ContractDetailsPageProps> = ({
                     </div>
 
                     {/* ATALHOS RÁPIDOS MOBILE */}
-                    <div className="md:hidden grid grid-cols-2 gap-4">
+                    <div className="md:hidden grid grid-cols-1 gap-4">
                         <button onClick={() => onOpenMessage(loan)} className="flex items-center justify-center gap-2 p-4 bg-slate-900 border border-slate-800 rounded-2xl text-[10px] font-black uppercase text-slate-400">
                             <MessageSquare size={16}/> WhatsApp
-                        </button>
-                        <button onClick={onBack} className="flex items-center justify-center gap-2 p-4 bg-slate-900 border border-slate-800 rounded-2xl text-[10px] font-black uppercase text-slate-400">
-                            <ChevronLeft size={16}/> Voltar
                         </button>
                     </div>
                 </div>

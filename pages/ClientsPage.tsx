@@ -31,23 +31,13 @@ export const ClientsPage: React.FC<ClientsPageProps> = ({
     <div className="space-y-6 animate-in fade-in">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div className="flex items-center gap-4">
-                {goBack && (
-                    <button
-                        onClick={goBack}
-                        className="p-2 bg-slate-900 border border-slate-800 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-all active:scale-95 shadow-lg"
-                        title="Voltar"
-                    >
-                        <ChevronLeft size={20} />
-                    </button>
-                )}
-
                 <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-600 to-violet-600 flex items-center justify-center text-white shrink-0 shadow-lg shadow-indigo-900/20">
                         <Users size={20} />
                     </div>
                     <div>
-                        <h1 className="text-sm font-black text-white uppercase tracking-wider leading-none">Carteira de Clientes</h1>
-                        <p className="text-[10px] text-slate-500 font-bold uppercase mt-1 tracking-widest">Gestão de Base Ativa</p>
+                        <h1 className="text-xl font-semibold text-white uppercase tracking-wider leading-none">Carteira de <span className="text-blue-500">Clientes</span></h1>
+                        <p className="text-sm text-slate-500 font-medium uppercase mt-1 tracking-widest">Gestão de Base Ativa</p>
                     </div>
                 </div>
             </div>
@@ -124,6 +114,18 @@ export const ClientsPage: React.FC<ClientsPageProps> = ({
                             <Phone size={12} className="text-blue-500"/> 
                             <span className="truncate">{client.phone}</span>
                         </div>
+                        {client.document && (
+                            <div className="flex items-center gap-2 text-[10px] text-slate-400 bg-slate-950/50 p-2 rounded-xl">
+                                <CheckSquare size={12} className="text-indigo-500"/>
+                                <span className="truncate">{client.document}</span>
+                            </div>
+                        )}
+                        {client.email && (
+                            <div className="flex items-center gap-2 text-[10px] text-slate-400 bg-slate-950/50 p-2 rounded-xl">
+                                <Users size={12} className="text-purple-500"/>
+                                <span className="truncate">{client.email}</span>
+                            </div>
+                        )}
                         {(client as any).address && (
                             <div className="flex items-center gap-2 text-[10px] text-slate-400 bg-slate-950/50 p-2 rounded-xl">
                                 <MapPin size={12} className="text-emerald-500"/>

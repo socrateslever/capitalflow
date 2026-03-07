@@ -163,7 +163,7 @@ export const OperatorSupportChat = ({ activeUser, onClose }: { activeUser: any; 
              <ShieldCheck size={20}/>
           </div>
           <div>
-            <h1 className="text-sm font-black text-white uppercase tracking-wider leading-none">Central de Atendimento</h1>
+            <h1 className="text-sm font-black text-white uppercase tracking-wider leading-none">Central de <span className="text-blue-500">Atendimento</span></h1>
             <p className="text-[10px] text-slate-500 font-bold uppercase mt-1 tracking-widest">Painel do Operador</p>
           </div>
         </div>

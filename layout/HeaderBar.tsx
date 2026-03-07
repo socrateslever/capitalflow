@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { TrendingUp, Plus, Loader2, LayoutGrid, Eye, EyeOff, Users, LayoutDashboard, Wallet, Briefcase, PiggyBank } from 'lucide-react';
+import { TrendingUp, Plus, Loader2, LayoutGrid, Eye, EyeOff, Users, LayoutDashboard, Wallet, Briefcase, PiggyBank, Calendar, Calculator, ArrowRightLeft, MessageCircle } from 'lucide-react';
 import { UserProfile } from '../types';
 import { Tooltip } from '../components/ui/Tooltip';
 
@@ -21,11 +21,15 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
 }) => {
   const getTabIcon = (tab: string) => {
     switch (tab) {
-      case 'DASHBOARD': return <LayoutDashboard size={14}/>;
-      case 'CLIENTS': return <Users size={14}/>;
-      case 'TEAM': return <Briefcase size={14}/>;
-      case 'SOURCES': return <Wallet size={14}/>;
-      case 'PERSONAL_FINANCE': return <PiggyBank size={14}/>;
+      case 'DASHBOARD': return <LayoutDashboard size={14} className="text-blue-500"/>;
+      case 'CLIENTS': return <Users size={14} className="text-indigo-500"/>;
+      case 'TEAM': return <Briefcase size={14} className="text-amber-500"/>;
+      case 'SOURCES': return <Wallet size={14} className="text-emerald-500"/>;
+      case 'PERSONAL_FINANCE': return <PiggyBank size={14} className="text-pink-500"/>;
+      case 'AGENDA': return <Calendar size={14} className="text-purple-500"/>;
+      case 'SIMULATOR': return <Calculator size={14} className="text-blue-400"/>;
+      case 'FLOW': return <ArrowRightLeft size={14} className="text-teal-500"/>;
+      case 'ACQUISITION': return <MessageCircle size={14} className="text-indigo-400"/>;
       default: return null;
     }
   };
@@ -37,6 +41,10 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
       case 'TEAM': return 'Equipe';
       case 'SOURCES': return 'Capital';
       case 'PERSONAL_FINANCE': return 'Minhas Finanças';
+      case 'AGENDA': return 'Agenda';
+      case 'SIMULATOR': return 'Simulador';
+      case 'FLOW': return 'Extrato';
+      case 'ACQUISITION': return 'Captação';
       default: return tab;
     }
   };

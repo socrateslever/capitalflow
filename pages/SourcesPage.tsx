@@ -44,23 +44,13 @@ export const SourcesPage: React.FC<SourcesPageProps> = ({
     <div className="space-y-6 animate-in fade-in">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div className="flex items-center gap-4">
-          {goBack && (
-            <button
-              onClick={goBack}
-              className="p-2 bg-slate-900 border border-slate-800 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-all active:scale-95 shadow-lg"
-              title="Voltar"
-            >
-              <ChevronLeft size={20} />
-            </button>
-          )}
-
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-600 to-teal-600 flex items-center justify-center text-white shrink-0 shadow-lg shadow-emerald-900/20">
               <Wallet size={20} />
             </div>
             <div>
-              <h1 className="text-sm font-black text-white uppercase tracking-wider leading-none">Fontes de Capital</h1>
-              <p className="text-[10px] text-slate-500 font-bold uppercase mt-1 tracking-widest">Gestão de Fundos e Liquidez</p>
+              <h1 className="text-xl font-semibold text-white uppercase tracking-wider leading-none">Fontes de <span className="text-blue-500">Capital</span></h1>
+              <p className="text-sm text-slate-500 font-medium uppercase mt-1 tracking-widest">Gestão de Fundos e Liquidez</p>
             </div>
           </div>
         </div>
