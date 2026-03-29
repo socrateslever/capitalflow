@@ -121,15 +121,21 @@ const useMemberActivation = (
       let authUid = '';
 
       // Otimização: Tentar SignUp primeiro (esperado para novos membros)
-      // Se já existir, o erro "User already registered" nos guiará para o SignIn
+      // Se já registrado, tentamos o login para capturar o UID
       const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
         email,
         password: authPass,
-        options: { data: { full_name: form.name } }
+        options: { 
+          data: { 
+            full_name: form.name,
+            owner_id: inviteData.teams?.owner_profile_id,
+            supervisor_id: inviteData.teams?.owner_profile_id,
+            origin: 'TEAM_INVITE'
+          } 
+        }
       });
 
       if (signUpError) {
-        // Se já registrado, tentamos o login para capturar o UID
         if (signUpError.message?.toLowerCase().includes('already registered') || signUpError.status === 422) {
           const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
             email,
@@ -155,8 +161,9 @@ const useMemberActivation = (
 
       if (!authUid) throw new Error('Falha crítica ao obter identificador de segurança.');
 
-      // 3) Cria Perfil vinculado ao Auth UID
-      const { error: profileError } = await supabase.from('perfis').insert({
+      // 3) Cria ou Atualiza Perfil vinculado ao Auth UID
+      // Usamos .upsert para evitar erros de Conflict 409 se o Trigger do banco disparar primeiro
+      const { error: profileError } = await supabase.from('perfis').upsert({
         id: authUid,
         user_id: authUid,
         supervisor_id: inviteData.teams?.owner_profile_id,
@@ -174,7 +181,7 @@ const useMemberActivation = (
         phone: cleanPhone,
         access_level: 1,
         created_at: new Date().toISOString()
-      });
+      }, { onConflict: 'id' });
 
       if (profileError) throw profileError;
 
