@@ -1325,3 +1325,75 @@ Nenhum nesta etapa.
 
 Somente o painel do sino e a lista local de notificacoes foram alterados nesta etapa.
 Nenhuma regra de autenticacao, financeiro ou outras telas foi modificada.
+
+---
+## 2026-03-29 - Higienizacao de e-mail no fluxo do convidado
+
+### Objetivo
+
+Corrigir a rejeicao de e-mails visualmente validos no momento de criar/ativar o usuario convidado.
+
+### Arquivos alterados
+
+1. `features/auth/AuthScreen.tsx`
+   - Adicionada normalizacao de e-mail para remover `mailto:`, espacos invisiveis, espacos internos e delimitadores copiados por engano.
+   - O fluxo de ativacao do convidado agora valida o e-mail antes do `signUp`.
+   - O fluxo de criacao de conta e de recuperacao tambem passou a reaproveitar a mesma higienizacao.
+   - Campos de e-mail do convidado, criacao e recuperacao passaram a limpar a entrada ja na digitacao.
+
+2. `IMPLEMENTACAO_RESUMO.md`
+   - Registro desta correcao.
+
+### Arquivos criados
+
+Nenhum nesta etapa.
+
+### Motivo tecnico
+
+- O erro reportado era `Email address "bruno.ister@gmail.com" is invalid`.
+- Nesse tipo de caso, o texto aparenta estar correto, mas pode carregar aspas, prefixo `mailto:`, espacos internos ou caracteres invisiveis de copia e cola.
+- O frontend agora envia ao Supabase apenas um e-mail higienizado e previamente validado.
+
+### Validacao executada
+
+1. `npx tsc -b --pretty false`
+   - resultado: OK
+
+### Confirmacao de escopo
+
+Somente o fluxo de e-mail dentro do `AuthScreen` foi alterado nesta etapa.
+Nenhuma regra financeira, notificacao ou SQL foi modificada.
+
+---
+## 2026-03-29 - Correcao de labels quebrados no cabecalho
+
+### Objetivo
+
+Corrigir textos do header que apareceram com encoding quebrado na interface.
+
+### Arquivos alterados
+
+1. `layout/HeaderBar.tsx`
+   - Corrigidos os labels `Captação`, `Jurídico` e `Olá` que estavam aparecendo com caracteres corrompidos.
+
+2. `IMPLEMENTACAO_RESUMO.md`
+   - Registro desta correcao.
+
+### Arquivos criados
+
+Nenhum nesta etapa.
+
+### Motivo tecnico
+
+- O arquivo do cabeçalho carregava algumas strings com encoding quebrado.
+- Isso afetava diretamente os rótulos visíveis dos botões e a saudação do usuário.
+
+### Validacao executada
+
+1. `npx tsc -b --pretty false`
+   - resultado: OK
+
+### Confirmacao de escopo
+
+Somente os textos quebrados do `HeaderBar` foram alterados nesta etapa.
+Nenhuma estrutura de navegação ou regra funcional foi modificada.

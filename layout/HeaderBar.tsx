@@ -288,9 +288,9 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
       case 'FLOW':
         return 'Extrato';
       case 'ACQUISITION':
-        return 'CaptaÃ§Ã£o';
+        return 'Captação';
       case 'LEGAL':
-        return 'JurÃ­dico';
+        return 'Jurídico';
       case 'PROFILE':
         return 'Perfil';
       case 'HUB':
@@ -475,7 +475,7 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
                   Capital<span style={{ color: primaryColor }}>Flow</span>
                 </h1>
                 <p id="user-greeting" className="text-[8px] sm:text-xs text-emerald-500 animate-pulse font-extrabold uppercase tracking-widest mt-0.5">
-                  OlÃ¡, {activeUser?.name?.split(' ')[0] || 'Gestor'}
+                  Olá, {activeUser?.name?.split(' ')[0] || 'Gestor'}
                 </p>
               </div>
             </div>

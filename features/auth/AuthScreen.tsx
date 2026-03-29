@@ -40,13 +40,28 @@ const finalizeInvite = async (id: string, status: 'ACCEPTED' | 'EXPIRED') => {
 
 const wait = (ms: number) => new Promise((resolve) => window.setTimeout(resolve, ms));
 
+const normalizeEmailAddress = (value: string) =>
+  String(value || '')
+    .normalize('NFKC')
+    .replace(/^mailto:/i, '')
+    .replace(/[\u200B-\u200D\uFEFF]/g, '')
+    .replace(/\s+/g, '')
+    .replace(/^[<>"'`]+|[<>"'`]+$/g, '')
+    .trim()
+    .toLowerCase();
+
+const isEmailAddressValid = (value: string) =>
+  /^[a-z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-z0-9](?:[a-z0-9-]*[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]*[a-z0-9])?)+$/i.test(
+    value
+  );
+
 const ensureProfileWriteSession = async (
   email: string,
   password: string,
   attempts = 6,
   delayMs = 500
 ) => {
-  const normalizedEmail = email.trim().toLowerCase();
+  const normalizedEmail = normalizeEmailAddress(email);
   let signInTried = false;
 
   for (let attempt = 0; attempt < attempts; attempt += 1) {
@@ -117,7 +132,7 @@ const updateExistingProfileRow = async (profileId: string, payload: Record<strin
 };
 
 /**
- * 2. CAMADA DE LÓGICA (HOOKS)
+ * 2. CAMADA DE LÃ“GICA (HOOKS)
  */
 const useInviteFlow = (showToast: any) => {
   const [inviteToken, setInviteToken] = useState<string | null>(null);
@@ -130,7 +145,7 @@ const useInviteFlow = (showToast: any) => {
       try {
         const { data, error } = await fetchInviteByToken(token);
         if (error || !data) {
-          showToast('Convite inválido ou expirado.', 'error');
+          showToast('Convite invÃ¡lido ou expirado.', 'error');
           localStorage.removeItem('cm_invite_token');
           setInviteToken(null);
           return;
@@ -187,19 +202,23 @@ const useMemberActivation = (
     try {
       const cleanDoc = onlyDigits(form.document);
       const cleanPhone = onlyDigits(form.phone);
-      const email = form.email.trim().toLowerCase();
+      const email = normalizeEmailAddress(form.email);
 
-      // ✅ PIN real do app (4 dígitos)
+      if (!isEmailAddressValid(email)) {
+        throw new Error('Digite um e-mail vÃ¡lido para ativar o convidado, sem aspas ou espaÃ§os ocultos.');
+      }
+
+      // âœ… PIN real do app (4 dÃ­gitos)
       const pin = onlyDigits(form.accessCode.trim());
 
-      // ✅ Senha do Supabase Auth (mínimo 6 caracteres) - Regra Unificada
+      // âœ… Senha do Supabase Auth (mÃ­nimo 6 caracteres) - Regra Unificada
       const pinToAuthPassword = (p: string) => p.length < 6 ? p.padEnd(6, '0') : p;
       const authPass = pinToAuthPassword(pin);
 
       let authUid = '';
 
-      // Otimização: Tentar SignUp primeiro (esperado para novos membros)
-      // Se já registrado, tentamos o login para capturar o UID
+      // OtimizaÃ§Ã£o: Tentar SignUp primeiro (esperado para novos membros)
+      // Se jÃ¡ registrado, tentamos o login para capturar o UID
       const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
         email,
         password: authPass,
@@ -224,7 +243,7 @@ const useMemberActivation = (
             if (signInError.message?.toLowerCase().includes('rate limit')) {
               throw new Error('Muitas tentativas. Por favor, aguarde alguns minutos antes de tentar novamente.');
             }
-            throw new Error('Este e-mail já está em uso com outra senha ou o limite de segurança foi atingido.');
+            throw new Error('Este e-mail jÃ¡ estÃ¡ em uso com outra senha ou o limite de seguranÃ§a foi atingido.');
           }
           authUid = signInData.user?.id || '';
         } else {
@@ -237,7 +256,7 @@ const useMemberActivation = (
         authUid = signUpData.user?.id || '';
       }
 
-      if (!authUid) throw new Error('Falha crítica ao obter identificador de segurança.');
+      if (!authUid) throw new Error('Falha crÃ­tica ao obter identificador de seguranÃ§a.');
 
       // 3) Aguarda a sessao autenticar e atualiza o perfil criado pelo trigger do banco
       const hasSessionForProfileWrite = await ensureProfileWriteSession(email, authPass);
@@ -253,7 +272,7 @@ const useMemberActivation = (
         email,
         usuario_email: email,
 
-        // ✅ mantém PIN 4 no app
+        // âœ… mantÃ©m PIN 4 no app
         senha_acesso: pin,
         access_code: pin,
 
@@ -270,7 +289,7 @@ const useMemberActivation = (
       localStorage.removeItem('cm_invite_token');
       showToast('Conta ativada!', 'success');
 
-      // ✅ login do fluxo de equipe continua com PIN 4
+      // âœ… login do fluxo de equipe continua com PIN 4
       await submitTeamLogin({ document: cleanDoc, phone: cleanPhone, code: pin }, showToast);
 
       const cleanUrl = window.location.origin + window.location.pathname;
@@ -290,15 +309,21 @@ const useCreateProfile = (setLoginUser: any, setIsCreatingProfile: any, showToas
 
   const handleCreate = async () => {
     if (!form.name.trim() || !form.email.trim() || !form.password) {
-      showToast('Preencha os campos obrigatórios.', 'error');
+      showToast('Preencha os campos obrigatÃ³rios.', 'error');
       return;
     }
 
     setIsProcessing(true);
 
     try {
+      const email = normalizeEmailAddress(form.email);
+
+      if (!isEmailAddressValid(email)) {
+        throw new Error('Digite um e-mail vÃ¡lido para criar a conta.');
+      }
+
       const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: form.email.trim().toLowerCase(),
+        email,
         password: form.password.trim(),
         options: { data: { full_name: form.name } }
       });
@@ -306,7 +331,6 @@ const useCreateProfile = (setLoginUser: any, setIsCreatingProfile: any, showToas
       if (authError) throw authError;
       if (!authData.user) throw new Error('Erro ao gerar credenciais.');
 
-      const email = form.email.trim().toLowerCase();
       const hasSessionForProfileWrite = await ensureProfileWriteSession(email, form.password.trim());
 
       if (hasSessionForProfileWrite) {
@@ -343,15 +367,20 @@ const useRecoveryAndSupport = (setIsRecoveringPassword: any, showToast: any) => 
 
   const handleHelpSupport = (type: 'password' | 'access') => {
     const number = '5592991148103';
-    const msg = type === 'password' ? 'Olá, esqueci minha senha no CapitalFlow.' : 'Olá, não consigo acessar minha conta.';
+    const msg = type === 'password' ? 'OlÃ¡, esqueci minha senha no CapitalFlow.' : 'OlÃ¡, nÃ£o consigo acessar minha conta.';
     window.open(`https://wa.me/${number}?text=${encodeURIComponent(msg)}`, '_blank');
   };
 
   const handleRecovery = async () => {
     if (!form.email.trim()) return;
-    const { error } = await supabase.auth.resetPasswordForEmail(form.email.trim());
+    const email = normalizeEmailAddress(form.email);
+    if (!isEmailAddressValid(email)) {
+      showToast('Digite um e-mail vÃ¡lido para recuperar a senha.', 'error');
+      return;
+    }
+    const { error } = await supabase.auth.resetPasswordForEmail(email);
     if (error) showToast(error.message, 'error');
-    else showToast('E-mail de recuperação enviado!', 'success');
+    else showToast('E-mail de recuperaÃ§Ã£o enviado!', 'success');
     setIsRecoveringPassword(false);
   };
 
@@ -389,7 +418,7 @@ const InviteActivationView = ({ form, setForm, onConfirm, isLoading, errorText, 
         <UserPlus className="text-white w-8 h-8" />
       </div>
       <h1 className="text-xl font-black text-white uppercase tracking-tighter mb-1">Ativar Acesso</h1>
-      <p className="text-slate-500 text-xs font-bold uppercase tracking-widest">Você está entrando em: Equipe</p>
+      <p className="text-slate-500 text-xs font-bold uppercase tracking-widest">VocÃª estÃ¡ entrando em: Equipe</p>
     </div>
 
     {errorText && (
@@ -412,7 +441,7 @@ const InviteActivationView = ({ form, setForm, onConfirm, isLoading, errorText, 
         className="w-full bg-slate-800/50 p-4 rounded-xl text-white outline-none border border-slate-700 text-sm font-bold"
         placeholder="Seu E-mail"
         value={form.email || ''}
-        onChange={(e) => setForm({ ...form, email: e.target.value })}
+        onChange={(e) => setForm({ ...form, email: normalizeEmailAddress(e.target.value) })}
       />
       <input
         type="text"
@@ -425,7 +454,7 @@ const InviteActivationView = ({ form, setForm, onConfirm, isLoading, errorText, 
         type="text"
         maxLength={4}
         className="w-full bg-slate-800/50 p-4 rounded-xl text-white outline-none border border-slate-700 text-sm font-bold"
-        placeholder="Crie um PIN de 4 dígitos"
+        placeholder="Crie um PIN de 4 dÃ­gitos"
         value={form.accessCode || ''}
         onChange={(e) => setForm({ ...form, accessCode: onlyDigits(e.target.value) })}
       />
@@ -558,7 +587,7 @@ const LoginView = ({
       onClick={handleDemoMode}
       className="w-full py-3 border border-dashed border-emerald-600/50 text-emerald-500 hover:bg-emerald-600/10 rounded-2xl text-[10px] font-black uppercase flex items-center justify-center gap-2 transition-all"
     >
-      <Beaker size={14} /> Modo Demonstração
+      <Beaker size={14} /> Modo DemonstraÃ§Ã£o
     </button>
   </div>
 );
@@ -610,7 +639,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
   const handleGoogleLogin = async () => {
     try {
       if (isDev) console.log('[AUTH_SCREEN] Iniciando login com Google...');
-      // Limpa qualquer resquício de sessão anterior antes de iniciar OAuth
+      // Limpa qualquer resquÃ­cio de sessÃ£o anterior antes de iniciar OAuth
       localStorage.removeItem('cm_session');
       
       const { error } = await supabase.auth.signInWithOAuth({
@@ -723,7 +752,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
                   placeholder="E-mail"
                   className="w-full bg-slate-800 p-4 rounded-xl text-white outline-none"
                   value={createForm.email || ''}
-                  onChange={(e) => setCreateForm({ ...createForm, email: e.target.value })}
+                  onChange={(e) => setCreateForm({ ...createForm, email: normalizeEmailAddress(e.target.value) })}
                 />
                 <input
                   type="password"
@@ -755,7 +784,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
                   placeholder="Seu e-mail cadastrado"
                   className="w-full bg-slate-800 p-4 rounded-xl text-white outline-none"
                   value={recoveryForm.email || ''}
-                  onChange={(e) => setRecoveryForm({ ...recoveryForm, email: e.target.value })}
+                  onChange={(e) => setRecoveryForm({ ...recoveryForm, email: normalizeEmailAddress(e.target.value) })}
                 />
                 <button onClick={handleRecovery} className="w-full py-4 bg-blue-600 text-white rounded-xl font-black uppercase text-xs">
                   Enviar E-mail
@@ -783,7 +812,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
               onClick={() => handleHelpSupport('access')}
               className="w-full p-4 bg-slate-900 border border-slate-800 rounded-2xl flex items-center justify-between hover:bg-slate-800 transition-all"
             >
-              <span className="text-sm font-bold text-white">Não consigo entrar</span>
+              <span className="text-sm font-bold text-white">NÃ£o consigo entrar</span>
               <ChevronRight size={16} className="text-slate-500" />
             </button>
           </div>
