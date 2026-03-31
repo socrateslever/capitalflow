@@ -25,9 +25,9 @@ export interface RenewalResult {
 }
 
 export interface PaymentAllocation {
-    principalPaid: number;
-    interestPaid: number;
-    lateFeePaid: number;
+    paidPrincipal: number;
+    paidInterest: number;
+    paidLateFee: number;
     avGenerated: number;
 }
 

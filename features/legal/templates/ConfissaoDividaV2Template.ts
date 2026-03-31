@@ -76,7 +76,24 @@ export const generateConfissaoDividaV2HTML = (
   const honorarios = safePercent(data.honorariosPercentual);
 
   const installments = Array.isArray(data.installments) ? data.installments : [];
-  const formaPagamento = installments.length > 1 ? "PARCELADA" : "ÚNICA";
+  const isSinglePayment = installments.length === 1;
+  const installmentsCount = installments.length;
+
+  // Detecção Inteligente do Tipo de Contrato
+  let formaPagamento = "PAGAMENTO ÚNICO";
+  let descricaoPagamento = `será quitado em <strong>PARCELA ÚNICA</strong>`;
+
+  if (installmentsCount > 1) {
+    const cycle = data.billingCycle?.toUpperCase() || "MENSAL";
+    const valParcela = installments[0]?.amount ? numberToWordsBRL(installments[0].amount).toUpperCase() : FILL;
+    const valFormatado = installments[0]?.amount ? `R$ ${Number(installments[0].amount).toLocaleString('pt-BR', {minimumFractionDigits: 2})}` : FILL;
+    
+    formaPagamento = `PARCELADO (${cycle})`;
+    descricaoPagamento = `será quitado de forma <strong>PARCELADA (${cycle})</strong>, em ${installmentsCount} parcelas de ${valFormatado} (${valParcela})`;
+  }
+
+  const valParcelaFormatted = installments[0]?.amount ? `R$ ${Number(installments[0].amount).toLocaleString('pt-BR', {minimumFractionDigits: 2})}` : FILL;
+
   const primeiroVencimento = installments[0]?.dueDate
     ? safeDateBR(installments[0].dueDate)
     : FILL;
@@ -154,7 +171,7 @@ export const generateConfissaoDividaV2HTML = (
         <p><strong>PARÁGRAFO ÚNICO:</strong> O presente instrumento constitui Título Executivo Extrajudicial, nos termos do Artigo 784, inciso III, do Código de Processo Civil, apto a embasar execução judicial imediata.</p>
 
         <h2>CLÁUSULA 2 - DA FORMA DE PAGAMENTO</h2>
-        <p>O débito confessado será quitado ${formaPagamento}, com vencimento em ${primeiroVencimento}.</p>
+        <p>O débito confessado ${descricaoPagamento}, com vencimento em ${primeiroVencimento}.</p>
         <p><strong>PAGAMENTO:</strong> O pagamento deverá ser efetuado diretamente ao CREDOR, servindo o comprovante de transferência ou depósito como recibo definitivo de quitação.</p>
 
         <h2>CLÁUSULA 3 - DOS ENCARGOS POR ATRASO (MORA)</h2>
@@ -208,7 +225,7 @@ export const generateConfissaoDividaV2HTML = (
         </div>
 
         <p>Valor: <strong>${safeText(vm.totalDebt)} (${valorExtenso})</strong></p>
-        <p>Na data de vencimento acordada, pagarei incondicionalmente a <strong>${safeText(vm.creditorName)}</strong>, CPF nº ${safeText(vm.creditorDoc)}, a quantia acima descrita.</p>
+        <p>Na data de vencimento acordada, pagarei incondicionalmente a <strong>${safeText(vm.creditorName)}</strong>, CPF nº ${safeText(vm.creditorDoc)}, a quantia acima descrita${installmentsCount > 1 ? `, em ${installmentsCount} parcelas de ${valParcelaFormatted}` : ' em parcela única'}.</p>
         <p>Emitente (Devedor): <strong>${safeText(vm.debtorName)}</strong><br/>
         CPF: ${safeText(vm.debtorDoc)}</p>
         <p>Local: ${safeText(vm.city)}<br/>

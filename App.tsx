@@ -1,5 +1,5 @@
 // src/App.tsx
-import React, { useEffect, lazy, Suspense, useCallback } from 'react';
+import React, { useEffect, lazy, Suspense, useCallback, useRef } from 'react';
 import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { AppShell } from './layout/AppShell';
 import { NavHubController } from './layout/NavHubController';
@@ -132,6 +132,9 @@ export const App: React.FC = () => {
   const openNavHub = useCallback(() => ui.setShowNavHub(true), [ui.setShowNavHub]);
   const { goBack, isInHub } = useNavigationStack(activeTab, handleSetActiveTab, openNavHub);
 
+  // ✅ Prevenção de loop: evita que a página de contrato seja reaberta após fechar manual
+  const processedPathRef = useRef('');
+  
   const isInvitePath =
     window.location.pathname === '/invite' || window.location.pathname === '/setup-password';
 
@@ -148,14 +151,25 @@ export const App: React.FC = () => {
   const isPublicView = hasPortalAccessParams || !!portalToken || !!campaignId || !!legalSignToken;
 
   useEffect(() => {
+    // Se o path já foi processado ou é o mesmo, ignora (evita loop ao fechar)
+    if (location.pathname === processedPathRef.current) return;
+
     if (contractIdFromUrl && activeTab !== 'CONTRACT_DETAILS') {
+      processedPathRef.current = location.pathname;
       ui.setSelectedLoanId(contractIdFromUrl);
       handleSetActiveTab('CONTRACT_DETAILS');
     } else if (legalIdFromUrl && activeTab !== 'LEGAL') {
+      processedPathRef.current = location.pathname;
       ui.setSelectedLoanId(legalIdFromUrl);
       handleSetActiveTab('LEGAL');
+    } else if (!contractIdFromUrl && !legalIdFromUrl) {
+      // Se limpou o path manualmente ou via back, e ainda estava na aba de detalhes, volta pro dashboard
+      if (activeTab === 'CONTRACT_DETAILS' || activeTab === 'LEGAL') {
+        handleSetActiveTab('DASHBOARD');
+      }
+      processedPathRef.current = location.pathname;
     }
-  }, [contractIdFromUrl, legalIdFromUrl, activeTab, handleSetActiveTab]);
+  }, [contractIdFromUrl, legalIdFromUrl, activeTab, handleSetActiveTab, location.pathname]);
 
   const navigate = (path: string) => {
     routerNavigate(path);
@@ -514,7 +528,7 @@ export const App: React.FC = () => {
                     onBack={() => {
                       ui.setSelectedLoanId(null);
                       if (window.location.pathname.startsWith('/contrato/')) {
-                        window.history.replaceState({}, '', '/');
+                        routerNavigate('/', { replace: true });
                       }
                       goBack();
                     }}

@@ -112,9 +112,9 @@ const engine = {
     });
 
     return {
-      paidPrincipal: allocation.principalPaid,
-      paidInterest: allocation.interestPaid,
-      paidLateFee: allocation.lateFeePaid,
+      paidPrincipal: allocation.paidPrincipal,
+      paidInterest: allocation.paidInterest,
+      paidLateFee: allocation.paidLateFee,
     };
   },
 

@@ -37,7 +37,8 @@ export const PaymentManagerModal: React.FC<PaymentManagerModalProps> = ({
         forgivenessMode, setForgivenessMode,
         interestHandling, setInterestHandling,
         debtBreakdown,
-        virtualSchedule
+        virtualSchedule,
+        resolvedBillingCycle
     } = usePaymentManagerState({ data, paymentType, setPaymentType, avAmount, setAvAmount });
 
     if (!data) return null;
@@ -204,82 +205,98 @@ export const PaymentManagerModal: React.FC<PaymentManagerModalProps> = ({
                         {/* WORKSPACE PRINCIPAL - FLUXO ÚNICO */}
                         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
                             
-                            {/* CARD DE ENTRADA DE VALOR */}
-                            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-8 shadow-2xl relative overflow-hidden group focus-within:border-blue-500 transition-all">
-                                <div className="absolute top-0 right-0 w-32 h-32 bg-blue-600/5 blur-[60px] rounded-full"></div>
-                                
-                                <div className="relative z-10">
-                                    <div className="flex items-center justify-between mb-6">
-                                        <h2 className="text-xs font-black uppercase tracking-[0.2em] text-slate-500 flex items-center gap-2">
-                                            <Banknote size={16} className="text-blue-500"/>
-                                            Registrar Pagamento
-                                        </h2>
-                                        <div className="flex items-center gap-2 px-3 py-1 bg-slate-950 border border-slate-800 rounded-full">
-                                            <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></div>
-                                            <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Detecção Automática</span>
-                                        </div>
-                                    </div>
-
-                                    <div className="flex items-baseline gap-4 mb-8">
-                                        <span className="text-4xl font-black text-blue-500">R$</span>
-                                        <input 
-                                            type="text" 
-                                            inputMode="decimal" 
-                                            value={avAmount || ''} 
-                                            onChange={e => setAvAmount(e.target.value.replace(/[^0-9.,]/g, ''))} 
-                                            className="w-full bg-transparent text-6xl font-black text-white outline-none placeholder:text-slate-800 tracking-tighter" 
-                                            placeholder="0,00" 
-                                            autoFocus 
-                                        />
-                                    </div>
-
-                                    {/* PREVIEW DINÂMICO */}
-                                    {safeParse(avAmount) > 0 && (
-                                        <div className="bg-slate-950/50 border border-slate-800/50 p-6 rounded-2xl space-y-4 animate-in zoom-in-95 duration-300">
-                                            <div className="flex items-start gap-4">
-                                                <div className="w-10 h-10 bg-blue-600/20 rounded-full flex items-center justify-center text-blue-500 shrink-0">
-                                                    <TrendingUp size={18}/>
-                                                </div>
-                                                <div>
-                                                    <p className="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-1">Impacto do Recebimento</p>
-                                                    <p className="text-sm text-slate-200 font-bold leading-relaxed">
-                                                        {(() => {
-                                                            const val = safeParse(avAmount);
-                                                            const totalDue = debtBreakdown.total;
-                                                            const interestDue = totalInterestDue;
-                                                            
-                                                            if (val >= totalDue - 0.05) return "Quitação total: O contrato será encerrado e arquivado.";
-                                                            if (val >= interestDue - 0.05) {
-                                                                const amort = val - interestDue;
-                                                                if (amort > 0.05) return `Encargos + Amortização: Quita os juros e abate ${formatMoney(amort)} do capital principal.`;
-                                                                return "Renovação: Quita os juros/multas do período e mantém o capital principal.";
-                                                            }
-                                                            return `Pagamento Parcial: Abate ${formatMoney(val)} apenas dos juros/encargos acumulados.`;
-                                                        })()}
-                                                    </p>
-                                                </div>
-                                            </div>
-
-                                            <div className="h-px bg-slate-800/50 w-full" />
-
-                                            <div className="grid grid-cols-2 gap-4">
-                                                <div className="space-y-1">
-                                                    <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Novo Saldo Devedor</p>
-                                                    <p className="text-lg font-black text-white">
-                                                        {formatMoney(Math.max(0, debtBreakdown.principal - Math.max(0, safeParse(avAmount) - totalInterestDue)))}
-                                                    </p>
-                                                </div>
-                                                <div className="space-y-1 text-right">
-                                                    <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Status do Contrato</p>
-                                                    <p className="text-lg font-black text-emerald-500">
-                                                        {safeParse(avAmount) >= debtBreakdown.total - 0.05 ? 'QUITADO' : 'ATIVO'}
-                                                    </p>
-                                                </div>
+                            {(resolvedBillingCycle === 'DAILY_FREE' || resolvedBillingCycle === 'DAILY_FIXED_TERM') ? (
+                                <FlexibleDailyScreen 
+                                    amount={avAmount}
+                                    setAmount={setAvAmount}
+                                    manualDateStr={manualDateStr}
+                                    setManualDateStr={setManualDateStr}
+                                    debt={debtBreakdown}
+                                    loan={loan}
+                                    subMode={subMode}
+                                    setSetSubMode={setSubMode}
+                                    paymentType={paymentType}
+                                    setPaymentType={setPaymentType}
+                                    onConfirmFull={() => setAvAmount(debtBreakdown.total.toFixed(2))}
+                                />
+                            ) : (
+                                /* CARD DE ENTRADA DE VALOR (GIRO/MENSAL) */
+                                <div className="bg-slate-900 border border-slate-800 rounded-2xl p-8 shadow-2xl relative overflow-hidden group focus-within:border-blue-500 transition-all">
+                                    <div className="absolute top-0 right-0 w-32 h-32 bg-blue-600/5 blur-[60px] rounded-full"></div>
+                                    
+                                    <div className="relative z-10">
+                                        <div className="flex items-center justify-between mb-6">
+                                            <h2 className="text-xs font-black uppercase tracking-[0.2em] text-slate-500 flex items-center gap-2">
+                                                <Banknote size={16} className="text-blue-500"/>
+                                                Registrar Pagamento
+                                            </h2>
+                                            <div className="flex items-center gap-2 px-3 py-1 bg-slate-950 border border-slate-800 rounded-full">
+                                                <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></div>
+                                                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Detecção Automática</span>
                                             </div>
                                         </div>
-                                    )}
+
+                                        <div className="flex items-baseline gap-4 mb-8">
+                                            <span className="text-4xl font-black text-blue-500">R$</span>
+                                            <input 
+                                                type="text" 
+                                                inputMode="decimal" 
+                                                value={avAmount || ''} 
+                                                onChange={e => setAvAmount(e.target.value.replace(/[^0-9.,]/g, ''))} 
+                                                className="w-full bg-transparent text-6xl font-black text-white outline-none placeholder:text-slate-800 tracking-tighter" 
+                                                placeholder="0,00" 
+                                                autoFocus 
+                                            />
+                                        </div>
+
+                                        {/* PREVIEW DINÂMICO */}
+                                        {safeParse(avAmount) > 0 && (
+                                            <div className="bg-slate-950/50 border border-slate-800/50 p-6 rounded-2xl space-y-4 animate-in zoom-in-95 duration-300">
+                                                <div className="flex items-start gap-4">
+                                                    <div className="w-10 h-10 bg-blue-600/20 rounded-full flex items-center justify-center text-blue-500 shrink-0">
+                                                        <TrendingUp size={18}/>
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-1">Impacto do Recebimento</p>
+                                                        <p className="text-sm text-slate-200 font-bold leading-relaxed">
+                                                            {(() => {
+                                                                const val = safeParse(avAmount);
+                                                                const totalDue = debtBreakdown.total;
+                                                                const interestDue = totalInterestDue;
+                                                                
+                                                                if (val >= totalDue - 0.05) return "Quitação total: O contrato será encerrado e arquivado.";
+                                                                if (val >= interestDue - 0.05) {
+                                                                    const amort = val - interestDue;
+                                                                    if (amort > 0.05) return `Encargos + Amortização: Quita os juros e abate ${formatMoney(amort)} do capital principal.`;
+                                                                    return "Renovação: Quita os juros/multas do período e mantém o capital principal.";
+                                                                }
+                                                                return `Pagamento Parcial: Abate ${formatMoney(val)} apenas dos juros/encargos acumulados.`;
+                                                            })()}
+                                                        </p>
+                                                    </div>
+                                                </div>
+
+                                                <div className="h-px bg-slate-800/50 w-full" />
+
+                                                <div className="grid grid-cols-2 gap-4">
+                                                    <div className="space-y-1">
+                                                        <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Novo Saldo Devedor</p>
+                                                        <p className="text-lg font-black text-white">
+                                                            {formatMoney(Math.max(0, debtBreakdown.principal - Math.max(0, safeParse(avAmount) - totalInterestDue)))}
+                                                        </p>
+                                                    </div>
+                                                    <div className="space-y-1 text-right">
+                                                        <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Status do Contrato</p>
+                                                        <p className="text-lg font-black text-emerald-500">
+                                                            {safeParse(avAmount) >= debtBreakdown.total - 0.05 ? 'QUITADO' : 'ATIVO'}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
-                            </div>
+                            )}
 
                             {/* CONFIGURAÇÕES ADICIONAIS */}
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

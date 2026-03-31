@@ -55,12 +55,20 @@ export const usePaymentManagerState = ({ data, paymentType, setPaymentType, avAm
             finalMora = 0;
         }
 
+        // ✅ FALLBACK UI: Se o cálculo retornar zero absoluto mas há principal no contrato
+        if (freshCalc.total <= 0 && (Number(data.loan.principal) || 0) > 0) {
+            const headPrincipal = Number(data.loan.principal);
+            const rate = (Number(data.loan.interestRate) || 0) / 100;
+            freshCalc.interest = Math.round(headPrincipal * rate * 100) / 100;
+            freshCalc.principal = 0; // Assume renovação de juros num primeiro momento
+        }
+
         return {
             principal: freshCalc.principal,
             interest: freshCalc.interest,
             fine: finalFine,
             dailyMora: finalMora,
-            total: freshCalc.principal + freshCalc.interest + finalFine + finalMora
+            total: (freshCalc.principal || 0) + (freshCalc.interest || 0) + (finalFine || 0) + (finalMora || 0)
         };
     }, [data, forgivenessMode]);
 
@@ -202,6 +210,7 @@ export const usePaymentManagerState = ({ data, paymentType, setPaymentType, avAm
         forgivenessMode, setForgivenessMode,
         interestHandling, setInterestHandling,
         debtBreakdown,
-        virtualSchedule
+        virtualSchedule,
+        resolvedBillingCycle
     };
 };

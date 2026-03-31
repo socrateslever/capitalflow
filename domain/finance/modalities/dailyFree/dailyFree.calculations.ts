@@ -1,14 +1,16 @@
-
-import { Loan, Installment, LoanPolicy } from "@/types";
-import { getDaysDiff } from "@/utils/dateHelpers";
+import { Loan, Installment, LoanPolicy } from "../../../../types";
+import { getDaysDiff } from "../../../../utils/dateHelpers";
 import { CalculationResult } from "../types";
 
 const round = (num: number) => Math.round((num + Number.EPSILON) * 100) / 100;
 
 export const calculateDailyFree = (loan: Loan, inst: Installment, policy: LoanPolicy): CalculationResult => {
+    // ✅ FALLBACK: Se a parcela não tem principal individual, usa o principal do contrato (Floating Debt)
+    const principal = Number(inst?.principalRemaining) || Number(loan?.principal) || 0;
+    
     // Valor base da diária = (Taxa Mensal / 30) * Principal
-    const dailyRatePercent = policy.interestRate / 30; 
-    const dailyCost = round(inst.principalRemaining * (dailyRatePercent / 100));
+    const dailyRatePercent = (Number(policy?.interestRate) || 0) / 30; 
+    const dailyCost = round(principal * (dailyRatePercent / 100));
     
     const daysLate = getDaysDiff(inst.dueDate);
     
@@ -19,8 +21,8 @@ export const calculateDailyFree = (loan: Loan, inst: Installment, policy: LoanPo
     const totalInterest = round((inst.interestRemaining || 0) + accruedInterest);
     
     return {
-        total: round(inst.principalRemaining + totalInterest),
-        principal: inst.principalRemaining,
+        total: round(principal + totalInterest),
+        principal: principal,
         interest: totalInterest,
         lateFee: 0, 
         baseForFine: 0,

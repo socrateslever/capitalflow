@@ -22,9 +22,9 @@ export const renewMonthly = (
     const currentInterest = Number(inst.interestRemaining) || 0;
     
     // Valores Pagos (Alocados)
-    const principalPaid = Number(allocation?.principalPaid) || 0;
+    const principalPaid = Number(allocation?.paidPrincipal) || 0;
     const avPaid = Number(allocation?.avGenerated) || 0;
-    const interestPaid = Number(allocation?.interestPaid) || 0;
+    const interestPaid = Number(allocation?.paidInterest) || 0;
     
     // 1. Novo Saldo de Principal
     const newPrincipalRemaining = Math.max(0, round(currentPrincipal - principalPaid - avPaid));

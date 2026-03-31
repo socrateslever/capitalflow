@@ -62,14 +62,22 @@ export const LegalDocumentEditorPage: React.FC<Props> = ({ loanId: propLoanId, l
     
     const city = activeUser?.city || '[PREENCHER]';
 
+    const installmentsCount = loan.installments?.length || 0;
+    const isSinglePayment = installmentsCount === 1;
+    const billingCycle = loan.billingCycle || 'MENSAL';
+    
+    const formaPagamentoText = isSinglePayment 
+      ? 'EM PARCELA ÚNICA' 
+      : `DE FORMA PARCELADA (${billingCycle})`;
+
     const baseText = `
 INSTRUMENTO PARTICULAR DE CONFISSÃO DE DÍVIDA E PROMESSA DE PAGAMENTO
 
 PARTES
 
-CREDOR: ${creditorName}, [PREENCHER], [PREENCHER], [PREENCHER], CPF: ${creditorCpf}, residente em [PREENCHER].
+CREDOR: ${creditorName}, [NACIONALIDADE], [ESTADO CIVIL], [PROFISSÃO], CPF: ${creditorCpf}, residente em [ENDEREÇO COMPLETO].
 
-DEVEDOR: ${debtorName}, [PREENCHER], [PREENCHER], [PREENCHER], CPF: ${debtorCpf}, residente em [PREENCHER].
+DEVEDOR: ${debtorName}, [NACIONALIDADE], [ESTADO CIVIL], [PROFISSÃO], CPF: ${debtorCpf}, residente em [ENDEREÇO COMPLETO].
 
 CLÁUSULA 1 - DO RECONHECIMENTO DA DÍVIDA
 
@@ -81,9 +89,7 @@ PARÁGRAFO ÚNICO: Este instrumento constitui Título Executivo Extrajudicial (A
 
 CLÁUSULA 2 - DA FORMA DE PAGAMENTO
 
-O pagamento será realizado de forma:
-
-[PREENCHER]
+O pagamento será realizado ${formaPagamentoText}.
 
 Vencimento: ${nextDueDate}
 

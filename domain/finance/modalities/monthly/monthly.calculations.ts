@@ -1,17 +1,21 @@
-
-import { Loan, Installment, LoanPolicy } from "@/types";
-import { getDaysDiff } from "@/utils/dateHelpers";
+import { Loan, Installment, LoanPolicy } from "../../../../types";
+import { getDaysDiff } from "../../../../utils/dateHelpers";
 import { CalculationResult } from "../types";
 
 const round = (num: number) => Math.round((num + Number.EPSILON) * 100) / 100;
 
 export const calculateMonthly = (loan: Loan, inst: Installment, policy: LoanPolicy): CalculationResult => {
     const daysLate = Math.max(0, getDaysDiff(inst.dueDate));
-    const principal = inst.principalRemaining;
+    
+    // ✅ FALLBACK: Se a parcela não tem principal individual, usa o principal do contrato (Floating Debt)
+    const principal = Number(inst?.principalRemaining) || Number(loan?.principal) || 0;
     
     // CRÍTICO: Usa o interestRemaining processado pelo rebuild.
-    // Isso garante que se houve pagamento parcial, o valor aqui já está abatido.
-    const interest = inst.interestRemaining;
+    const monthlyRate = (Number(policy?.interestRate) || 0) / 100;
+    const expectedMonthlyInterest = round(principal * monthlyRate);
+    
+    // Se o banco tem 0 mas o contrato é Mensal de Juros, assume que o juro do mês é devido
+    const interest = (Number(inst?.interestRemaining) || 0) > 0 ? Number(inst.interestRemaining) : expectedMonthlyInterest;
     
     let fineFixed = 0;
     let fineDaily = 0;

@@ -26,9 +26,9 @@ export interface PaymentBuckets {
 }
 
 export interface InstallmentPaymentPlan {
-  principalPaid: number;
-  interestPaid: number;
-  lateFeePaid: number;
+  paidPrincipal: number;
+  paidInterest: number;
+  paidLateFee: number;
   avGenerated: number;
   forgivenLateFee: number;
   totalDueBeforeForgiveness: number;
@@ -246,9 +246,9 @@ export const allocatePaymentFromBuckets = (params: {
   remaining = round(remaining - payPrincipal);
 
   return {
-    principalPaid: round(payPrincipal),
-    interestPaid: round(payInterest),
-    lateFeePaid: round(payLateFee),
+    paidPrincipal: round(payPrincipal),
+    paidInterest: round(payInterest),
+    paidLateFee: round(payLateFee),
     avGenerated: round(Math.max(0, remaining)),
     totalDue,
     remainingAfterPayment: round(
@@ -277,9 +277,9 @@ export const calculateInstallmentPaymentPlan = (params: {
   });
 
   return {
-    principalPaid: allocation.principalPaid,
-    interestPaid: allocation.interestPaid,
-    lateFeePaid: allocation.lateFeePaid,
+    paidPrincipal: allocation.paidPrincipal,
+    paidInterest: allocation.paidInterest,
+    paidLateFee: allocation.paidLateFee,
     avGenerated: allocation.avGenerated,
     forgivenLateFee: buckets.forgivenLateFee,
     totalDueBeforeForgiveness: buckets.totalBeforeForgiveness,
@@ -294,9 +294,9 @@ export const calculateInstallmentPaymentPlan = (params: {
 // --- ALOCAÇÃO DE PAGAMENTO ---
 
 export interface PaymentResult {
-  principalPaid: number;
-  interestPaid: number;
-  lateFeePaid: number;
+  paidPrincipal: number;
+  paidInterest: number;
+  paidLateFee: number;
   avGenerated: number;
 }
 
@@ -314,9 +314,9 @@ export const allocatePayment = (params: {
   });
 
   return {
-    principalPaid: allocation.principalPaid,
-    interestPaid: allocation.interestPaid,
-    lateFeePaid: allocation.lateFeePaid,
+    paidPrincipal: allocation.paidPrincipal,
+    paidInterest: allocation.paidInterest,
+    paidLateFee: allocation.paidLateFee,
     avGenerated: allocation.avGenerated,
   };
 };

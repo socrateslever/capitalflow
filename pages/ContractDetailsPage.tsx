@@ -11,6 +11,7 @@ import { translateTransactionType } from '../utils/translationHelpers';
 import { parseDateOnlyUTC, todayDateOnlyUTC } from '../utils/dateHelpers';
 import { loanEngine } from '../domain/loanEngine';
 import { usePaymentManagerState, ForgivenessMode } from '../components/modals/payment/hooks/usePaymentManagerState';
+import { FlexibleDailyScreen } from '../components/modals/payment/FlexibleDailyScreen';
 import { AgreementView } from '../features/agreements/components/AgreementView';
 
 interface ContractDetailsPageProps {
@@ -77,7 +78,9 @@ export const ContractDetailsPage: React.FC<ContractDetailsPageProps> = ({
         realPaymentDateStr, setRealPaymentDateStr,
         forgivenessMode, setForgivenessMode,
         interestHandling, setInterestHandling,
-        debtBreakdown
+        debtBreakdown,
+        resolvedBillingCycle,
+        subMode, setSubMode
     } = usePaymentManagerState({ 
         data, 
         paymentType, 
@@ -386,8 +389,23 @@ export const ContractDetailsPage: React.FC<ContractDetailsPageProps> = ({
                 {/* COLUNA DIREITA: PAGAMENTO */}
                 <div className="space-y-6">
                     
-                    {/* SEÇÃO 3 — REGISTRAR PAGAMENTO */}
-                    <div className="bg-slate-900 border border-slate-800 rounded-2xl p-8 shadow-2xl relative overflow-hidden group focus-within:border-blue-500 transition-all">
+                    {/* SEÇÃO 3 — REGISTRAR PAGAMENTO (AUTOMÁTICO POR MODALIDADE) */}
+                    {(resolvedBillingCycle === 'DAILY_FREE' || resolvedBillingCycle === 'DAILY_FIXED_TERM') ? (
+                        <FlexibleDailyScreen 
+                            amount={avAmount}
+                            setAmount={setAvAmount}
+                            manualDateStr={manualDateStr}
+                            setManualDateStr={setManualDateStr}
+                            debt={debtBreakdown}
+                            loan={loan}
+                            subMode={subMode}
+                            setSetSubMode={setSubMode}
+                            paymentType={paymentType}
+                            setPaymentType={setPaymentType}
+                            onConfirmFull={() => setAvAmount(debtBreakdown.total.toFixed(2))}
+                        />
+                    ) : (
+                        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-8 shadow-2xl relative overflow-hidden group focus-within:border-blue-500 transition-all">
                         <div className="absolute top-0 right-0 w-32 h-32 bg-blue-600/5 blur-[60px] rounded-full"></div>
                         
                         <div className="relative z-10">
@@ -520,6 +538,7 @@ export const ContractDetailsPage: React.FC<ContractDetailsPageProps> = ({
                             </button>
                         </div>
                     </div>
+                )}
 
                     {/* ATALHOS RÁPIDOS MOBILE */}
                     <div className="md:hidden grid grid-cols-1 gap-4">

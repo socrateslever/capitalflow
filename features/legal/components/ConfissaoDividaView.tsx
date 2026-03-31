@@ -41,6 +41,7 @@ export const ConfissaoDividaView: React.FC<ConfissaoDividaViewProps> = ({ loans,
     const [drafts, setDrafts] = useState<Record<string, string>>({});
 
     const [documentContent, setDocumentContent] = useState('');
+    const [activeScenario, setActiveScenario] = useState<'UNICO' | 'PARCELADO' | 'AUTO'>('AUTO');
     const [clauses, setClauses] = useState([
         { id: 'penhora', label: 'Penhora Automática', active: true, description: 'Autoriza a penhora de bens em caso de inadimplência.' },
         { id: 'avalista', label: 'Avalista Solidário', active: true, description: 'Inclui a responsabilidade solidária de um terceiro.' },
@@ -128,6 +129,9 @@ export const ConfissaoDividaView: React.FC<ConfissaoDividaViewProps> = ({ loans,
             installments: selectedLoan.installments,
             city: activeUser.city || 'Manaus',
             state: activeUser.state || 'AM',
+            billingCycle: selectedLoan.billingCycle,
+            amortizationType: selectedLoan.amortizationType,
+            isAgreement: !!selectedLoan.activeAgreement,
             clauses: clauses.reduce((acc, c) => ({ ...acc, [c.id]: c.active }), {}),
             witnesses: [
                 availableWitnesses.find(w => w.id === selectedW1),
@@ -135,7 +139,13 @@ export const ConfissaoDividaView: React.FC<ConfissaoDividaViewProps> = ({ loans,
             ].filter(Boolean)
         };
         
-        const content = DocumentTemplates.confissaoDivida(params);
+        const scenario = activeScenario === 'AUTO' 
+            ? ((selectedLoan.installments?.length || 0) > 1 ? 'PARCELADO' : 'UNICO')
+            : activeScenario;
+
+        const content = scenario === 'PARCELADO'
+            ? DocumentTemplates.confissaoDividaParcelado(params)
+            : DocumentTemplates.confissaoDividaUnico(params);
         setDocumentContent(content);
     }, [selectedLoan, activeUser, creditorName, creditorDoc, creditorFullAddress, clauses, selectedW1, selectedW2, availableWitnesses]);
 
@@ -232,6 +242,9 @@ export const ConfissaoDividaView: React.FC<ConfissaoDividaViewProps> = ({ loans,
                 originDescription: `Operação de mútuo financeiro ID ${selectedLoan.id.substring(0,8)}.`,
                 city: activeUser.city || 'Manaus',
                 state: activeUser.state || 'AM',
+                billingCycle: selectedLoan.billingCycle,
+                amortizationType: selectedLoan.amortizationType,
+                isAgreement: !!selectedLoan.activeAgreement,
                 witnesses: [w1, w2],
                 contractDate: selectedLoan.startDate,
                 agreementDate: new Date().toISOString(),
@@ -460,36 +473,55 @@ export const ConfissaoDividaView: React.FC<ConfissaoDividaViewProps> = ({ loans,
                                 {loans
                                     .filter(l => !l.isArchived && (l.debtorName.toLowerCase().includes(searchQuery.toLowerCase()) || l.debtorDocument.includes(searchQuery)))
                                     .sort((a, b) => a.debtorName.localeCompare(b.debtorName))
-                                    .map(loan => (
-                                    <button
-                                        key={loan.id}
-                                        onClick={() => { setSelectedLoan(loan); setDocumentContent(''); }}
-                                        className={`p-3 rounded-xl border transition-all text-left group relative overflow-hidden ${selectedLoan?.id === loan.id ? 'bg-indigo-600 border-indigo-400 shadow-lg' : 'bg-slate-900/40 border-slate-800/50 hover:border-slate-700'}`}
-                                    >
-                                        <div className="flex justify-between items-start mb-1">
-                                            <p className={`text-[10px] font-black uppercase tracking-tight truncate max-w-[160px] ${selectedLoan?.id === loan.id ? 'text-white' : 'text-slate-300'}`}>
-                                                {loan.debtorName}
-                                            </p>
-                                            {selectedLoan?.id === loan.id ? (
-                                                <CheckCircle2 size={12} className="text-white" />
-                                            ) : (
-                                                <div className="flex items-center gap-1 text-[8px] font-bold text-slate-500">
-                                                    <Calendar size={8} />
-                                                    {new Date(loan.startDate).toLocaleDateString('pt-BR')}
-                                                </div>
-                                            )}
-                                        </div>
+                                    .map(loan => {
+                                        const isAgreement = !!loan.activeAgreement;
+                                        const isSelected = selectedLoan?.id === loan.id;
                                         
-                                        <div className="flex items-baseline justify-between">
-                                            <p className={`text-sm font-black ${selectedLoan?.id === loan.id ? 'text-indigo-100' : 'text-white'}`}>
-                                                {formatMoney(loan.totalToReceive, isStealthMode)}
-                                            </p>
-                                            <span className={`text-[8px] font-bold uppercase ${selectedLoan?.id === loan.id ? 'text-indigo-200' : 'text-slate-500'}`}>
-                                                {loan.installments.length} PARC
-                                            </span>
-                                        </div>
-                                    </button>
-                                ))}
+                                        let itemClass = '';
+                                        if (isSelected) {
+                                            itemClass = isAgreement ? 'bg-purple-600 border-purple-400 shadow-lg' : 'bg-indigo-600 border-indigo-400 shadow-lg';
+                                        } else {
+                                            itemClass = isAgreement ? 'bg-purple-900/20 border-purple-800/40 hover:border-purple-600' : 'bg-slate-900/40 border-slate-800/50 hover:border-slate-700';
+                                        }
+
+                                        return (
+                                            <button
+                                                key={loan.id}
+                                                onClick={() => { setSelectedLoan(loan); setDocumentContent(''); }}
+                                                className={`p-3 rounded-xl border transition-all text-left group relative overflow-hidden ${itemClass}`}
+                                            >
+                                                <div className="flex justify-between items-start mb-1">
+                                                    <p className={`text-[10px] font-black uppercase tracking-tight truncate max-w-[130px] ${isSelected ? 'text-white' : isAgreement ? 'text-purple-200' : 'text-slate-300'}`}>
+                                                        {loan.debtorName}
+                                                    </p>
+                                                    <div className="flex items-center gap-1.5">
+                                                        {isAgreement && (
+                                                            <span className={`text-[7px] font-black px-1.5 py-0.5 rounded shadow-sm ${isSelected ? 'bg-white text-purple-600' : 'bg-purple-600 text-white'}`}>
+                                                                RENEG
+                                                            </span>
+                                                        )}
+                                                        {isSelected ? (
+                                                            <CheckCircle2 size={12} className="text-white" />
+                                                        ) : (
+                                                            <div className="flex items-center gap-1 text-[8px] font-bold text-slate-500">
+                                                                <Calendar size={8} />
+                                                                {new Date(loan.startDate).toLocaleDateString('pt-BR')}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                                
+                                                <div className="flex items-baseline justify-between">
+                                                    <p className={`text-sm font-black ${isSelected ? 'text-white/90' : isAgreement ? 'text-purple-300' : 'text-white'}`}>
+                                                        {formatMoney(loan.totalToReceive, isStealthMode)}
+                                                    </p>
+                                                    <span className={`text-[8px] font-bold uppercase ${isSelected ? 'text-white/60' : isAgreement ? 'text-purple-400/70' : 'text-slate-500'}`}>
+                                                        {loan.installments.length} PARC
+                                                    </span>
+                                                </div>
+                                            </button>
+                                        );
+                                    })}
                             </div>
                         </section>
 
@@ -764,6 +796,24 @@ export const ConfissaoDividaView: React.FC<ConfissaoDividaViewProps> = ({ loans,
                                     <div className="flex items-center gap-3">
                                         <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-pulse" />
                                         <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Pré-visualização da Minuta</span>
+                                    </div>
+                                    <div className="flex items-center gap-2 bg-slate-900/60 p-1 rounded-xl border border-slate-800/50">
+                                        {[
+                                            { id: 'AUTO', label: 'Automático' },
+                                            { id: 'UNICO', label: 'Modelo Único' },
+                                            { id: 'PARCELADO', label: 'Modelo Parcelado' }
+                                        ].map(opt => (
+                                            <button
+                                                key={opt.id}
+                                                onClick={() => {
+                                                    setActiveScenario(opt.id as any);
+                                                    setTimeout(handleGenerate, 10);
+                                                }}
+                                                className={`px-3 py-1.5 rounded-lg text-[8px] font-black uppercase tracking-widest transition-all ${activeScenario === opt.id ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-900/20' : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800'}`}
+                                            >
+                                                {opt.label}
+                                            </button>
+                                        ))}
                                     </div>
                                     <button 
                                         onClick={handleGenerate}

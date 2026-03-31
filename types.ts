@@ -343,6 +343,9 @@ export interface LegalDocumentParams {
   multaPercentual?: number;
   jurosMensal?: number;
   honorariosPercentual?: number;
+  billingCycle?: string;
+  amortizationType?: string;
+  isAgreement?: boolean;
   campos_faltantes?: string[];
   customContent?: string;
 }
@@ -497,7 +500,7 @@ export interface ImportCandidate {
   uf?: string;
   valor_base: number;
   data_referencia?: string;
-  notas?: string;
+  notes?: string;
   status: 'OK' | 'AVISO' | 'ERRO';
   mensagens: string[];
   original_row: any;

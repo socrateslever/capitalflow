@@ -1,10 +1,16 @@
--- 1. Apagar todas as versões possíveis da função para evitar conflitos de sobrecarga
+-- 1. Apagar todas as versões anteriores possíveis (V2 e V3 com 12 ou 13 parâmetros)
+-- Versões com 12 parâmetros (antigas)
 DROP FUNCTION IF EXISTS process_payment_v3_selective(text, uuid, uuid, uuid, uuid, numeric, numeric, numeric, timestamp with time zone, boolean, uuid, uuid);
 DROP FUNCTION IF EXISTS process_payment_v3_selective(uuid, uuid, uuid, uuid, uuid, numeric, numeric, numeric, timestamp with time zone, boolean, uuid, uuid);
 DROP FUNCTION IF EXISTS process_payment_v3_selective(uuid, uuid, uuid, uuid, uuid, numeric, numeric, numeric, date, boolean, uuid, uuid);
 DROP FUNCTION IF EXISTS process_payment_v3_selective(text, uuid, uuid, uuid, uuid, numeric, numeric, numeric, date, boolean, uuid, uuid);
 
--- 2. Recriar a versão correta e definitiva
+-- Versões com 13 parâmetros (conflitantes) - Tentando várias ordens prováveis
+DROP FUNCTION IF EXISTS process_payment_v3_selective(uuid, uuid, uuid, uuid, uuid, numeric, numeric, numeric, numeric, date, boolean, uuid, uuid);
+DROP FUNCTION IF EXISTS process_payment_v3_selective(text, uuid, uuid, uuid, uuid, numeric, numeric, numeric, numeric, date, boolean, uuid, uuid);
+DROP FUNCTION IF EXISTS process_payment_v3_selective(uuid, uuid, uuid, uuid, uuid, uuid, date, numeric, numeric, numeric, numeric, boolean, text);
+
+-- 2. Recriar a versão definitiva com 13 parâmetros (p_idempotency_key UUID)
 CREATE OR REPLACE FUNCTION process_payment_v3_selective(
   p_idempotency_key UUID,
   p_loan_id UUID,
@@ -14,6 +20,7 @@ CREATE OR REPLACE FUNCTION process_payment_v3_selective(
   p_principal_paid NUMERIC,
   p_interest_paid NUMERIC,
   p_late_fee_paid NUMERIC,
+  p_late_fee_forgiven NUMERIC, -- Adicionado: Controla o perdão de juros/mora em atraso
   p_payment_date DATE,
   p_capitalize_remaining BOOLEAN,
   p_source_id UUID,
@@ -23,29 +30,22 @@ DECLARE
   v_total_paid NUMERIC;
   v_lucro_total NUMERIC;
   v_inst_status TEXT;
-  v_loan_status TEXT;
-  v_remaining_principal NUMERIC;
-  v_remaining_interest NUMERIC;
-  v_remaining_late_fee NUMERIC;
-  v_new_principal NUMERIC;
-  v_new_interest NUMERIC;
-  v_new_late_fee NUMERIC;
+  v_remaining_total NUMERIC;
 BEGIN
-  -- 1. Verificar idempotência
-  IF EXISTS (SELECT 1 FROM transacoes WHERE idempotency_key = p_idempotency_key) THEN
+  -- 1. Verificar idempotência (Evita processamento duplicado)
+  IF EXISTS (SELECT 1 FROM transacoes WHERE idempotency_key = p_idempotency_key::TEXT) THEN
     RETURN;
   END IF;
 
   v_total_paid := p_principal_paid + p_interest_paid + p_late_fee_paid;
   v_lucro_total := p_interest_paid + p_late_fee_paid;
 
-  IF v_total_paid <= 0 THEN
-    RAISE EXCEPTION 'Valor do pagamento deve ser maior que zero.';
+  IF v_total_paid < 0 THEN
+    RAISE EXCEPTION 'Valor do pagamento não pode ser negativo.';
   END IF;
 
-  -- 2. Buscar dados atuais da parcela
-  SELECT status, principal_remaining, interest_remaining, late_fee_accrued
-  INTO v_inst_status, v_remaining_principal, v_remaining_interest, v_remaining_late_fee
+  -- 2. Buscar dados atuais da parcela (Bloqueio para concorrência)
+  SELECT status INTO v_inst_status
   FROM parcelas
   WHERE id = p_installment_id AND loan_id = p_loan_id
   FOR UPDATE;
@@ -55,39 +55,40 @@ BEGIN
   END IF;
 
   IF v_inst_status = 'PAID' THEN
-    RAISE EXCEPTION 'Parcela já está paga.';
+    RAISE EXCEPTION 'Parcela já está quitada.';
   END IF;
 
-  -- 3. Calcular novos saldos da parcela
-  v_new_principal := GREATEST(0, v_remaining_principal - p_principal_paid);
-  v_new_interest := GREATEST(0, v_remaining_interest - p_interest_paid);
-  v_new_late_fee := GREATEST(0, v_remaining_late_fee - p_late_fee_paid);
-
-  IF (v_new_principal + v_new_interest + v_new_late_fee) <= 0.05 THEN
-    v_inst_status := 'PAID';
-  ELSE
-    v_inst_status := 'PARTIAL';
-  END IF;
-
-  -- 4. Atualizar a parcela
+  -- 3. Atualizar saldos da parcela (Abate PAGO e PERDOADO)
   UPDATE parcelas
   SET 
-    principal_remaining = v_new_principal,
-    interest_remaining = v_new_interest,
-    late_fee_accrued = v_new_late_fee,
-    status = v_inst_status,
-    data_pagamento = p_payment_date,
-    updated_at = NOW()
+    principal_remaining = GREATEST(0, principal_remaining - p_principal_paid),
+    interest_remaining = GREATEST(0, interest_remaining - p_interest_paid),
+    late_fee_accrued = GREATEST(0, late_fee_accrued - p_late_fee_paid - p_late_fee_forgiven),
+    paid_principal = COALESCE(paid_principal, 0) + p_principal_paid,
+    paid_interest = COALESCE(paid_interest, 0) + p_interest_paid,
+    paid_late_fee = COALESCE(paid_late_fee, 0) + p_late_fee_paid,
+    paid_total = COALESCE(paid_total, 0) + p_principal_paid + p_interest_paid + p_late_fee_paid,
+    paid_date = p_payment_date
   WHERE id = p_installment_id;
+
+  -- 4. Definir novo status baseado no saldo restante real
+  SELECT (principal_remaining + interest_remaining + late_fee_accrued)
+  INTO v_remaining_total
+  FROM parcelas WHERE id = p_installment_id;
+
+  IF v_remaining_total <= 0.05 THEN
+    UPDATE parcelas SET status = 'PAID' WHERE id = p_installment_id;
+  ELSE
+    UPDATE parcelas SET status = 'PARTIAL' WHERE id = p_installment_id;
+  END IF;
 
   -- 5. Atualizar o saldo da carteira de origem (Capital)
   IF p_principal_paid > 0 THEN
     UPDATE fontes
-    SET balance = balance + p_principal_paid,
-        updated_at = NOW()
+    SET balance = balance + p_principal_paid
     WHERE id = p_source_id;
 
-    -- Registrar transação do capital
+    -- Registrar entrada de capital
     INSERT INTO transacoes (
       id, profile_id, loan_id, source_id, type, amount, principal_delta, interest_delta, late_fee_delta, date, notes, category, idempotency_key
     ) VALUES (
@@ -98,48 +99,34 @@ BEGIN
   -- 6. Atualizar o saldo do Caixa Livre (Lucro)
   IF v_lucro_total > 0 THEN
     UPDATE fontes
-    SET balance = balance + v_lucro_total,
-        updated_at = NOW()
+    SET balance = balance + v_lucro_total
     WHERE id = p_caixa_livre_id;
 
-    -- Registrar transação do lucro (Juros)
-    IF p_interest_paid > 0 THEN
-      INSERT INTO transacoes (
-        id, profile_id, loan_id, source_id, type, amount, principal_delta, interest_delta, late_fee_delta, date, notes, category, idempotency_key
-      ) VALUES (
-        gen_random_uuid(), p_profile_id, p_loan_id, p_caixa_livre_id, 'PAYMENT', p_interest_paid, 0, p_interest_paid, 0, p_payment_date, 'Lucro Recebido (Juros)', 'LUCRO', gen_random_uuid()
-      );
-    END IF;
-
-    -- Registrar transação do lucro (Multa/Mora)
-    IF p_late_fee_paid > 0 THEN
-      INSERT INTO transacoes (
-        id, profile_id, loan_id, source_id, type, amount, principal_delta, interest_delta, late_fee_delta, date, notes, category, idempotency_key
-      ) VALUES (
-        gen_random_uuid(), p_profile_id, p_loan_id, p_caixa_livre_id, 'PAYMENT', p_late_fee_paid, 0, 0, p_late_fee_paid, p_payment_date, 'Lucro Recebido (Multa/Mora)', 'LUCRO', gen_random_uuid()
-      );
-    END IF;
+    -- Registrar entrada de Lucro
+    INSERT INTO transacoes (
+      id, profile_id, loan_id, source_id, type, amount, principal_delta, interest_delta, late_fee_delta, date, notes, category, idempotency_key
+    ) VALUES (
+      gen_random_uuid(), p_profile_id, p_loan_id, p_caixa_livre_id, 'PAYMENT', v_lucro_total, 0, p_interest_paid, p_late_fee_paid, p_payment_date, 'Lucro Recebido (Juros/Mora)', 'LUCRO', gen_random_uuid()
+    );
   END IF;
 
-  -- 7. Capitalizar restante (se solicitado e se for renovação)
-  IF p_capitalize_remaining AND v_inst_status = 'PARTIAL' THEN
-    -- Lógica de capitalização (adicionar o restante ao principal e zerar juros/multa)
+  -- 7. Capitalizar restante se solicitado
+  IF p_capitalize_remaining AND v_remaining_total > 0.05 THEN
     UPDATE parcelas
     SET 
       principal_remaining = principal_remaining + interest_remaining + late_fee_accrued,
       interest_remaining = 0,
-      late_fee_accrued = 0,
-      updated_at = NOW()
+      late_fee_accrued = 0
     WHERE id = p_installment_id;
   END IF;
 
-  -- 8. Atualizar status do contrato se todas as parcelas estiverem pagas
+  -- 8. Atualizar status do contrato
   IF NOT EXISTS (
     SELECT 1 FROM parcelas 
-    WHERE loan_id = p_loan_id AND status != 'PAID' AND is_active = true
+    WHERE loan_id = p_loan_id AND status != 'PAID'
   ) THEN
     UPDATE contratos
-    SET status = 'PAID', updated_at = NOW()
+    SET status = 'PAID'
     WHERE id = p_loan_id;
   END IF;
 

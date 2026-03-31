@@ -38,8 +38,8 @@ export const renewDailyFree = (
   const skipWeekends = false;
 
   // Normaliza alocação
-  const interestPaid = round(Number(allocation?.interestPaid) || 0);
-  const principalPaid = round(Number(allocation?.principalPaid) || 0);
+  const interestPaid = round(Number(allocation?.paidInterest) || 0);
+  const principalPaid = round(Number(allocation?.paidPrincipal) || 0);
   const avGenerated = round(Number(allocation?.avGenerated) || 0);
 
   let newPrincipalRemaining = principalBase;

@@ -115,7 +115,7 @@ export const useFileController = (
             address: item.endereco || null,
             city: item.cidade || null,
             state: item.uf || null,
-            notes: item.notas || 'Importado via planilha',
+            notes: item.notes || 'Importado via planilha',
             access_code: accessCode,
             client_number: clientNum,
             created_at: item.data_referencia || new Date().toISOString(),

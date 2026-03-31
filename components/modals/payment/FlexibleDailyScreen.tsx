@@ -4,9 +4,23 @@ import { CheckSquare, Clock, Target, ArrowRightLeft, CalendarClock, Calendar } f
 import { formatBRDate, parseDateOnlyUTC, addDaysUTC } from '../../../utils/dateHelpers';
 import { cleanNumberStr } from '../../../utils/formatters';
 
-export const FlexibleDailyScreen = ({ 
+interface FlexibleDailyScreenProps {
+    amount: string;
+    setAmount: (val: string) => void;
+    manualDateStr: string;
+    setManualDateStr: (val: string) => void;
+    debt: any;
+    loan: any;
+    subMode: any;
+    setSetSubMode: (val: any) => void;
+    onConfirmFull: () => void;
+    paymentType: any;
+    setPaymentType: (val: any) => void;
+}
+
+export const FlexibleDailyScreen: React.FC<FlexibleDailyScreenProps> = ({ 
     amount, setAmount, manualDateStr, setManualDateStr, debt, loan, subMode, setSetSubMode, onConfirmFull, paymentType, setPaymentType
-}: any) => {
+}) => {
     
     // VISUAL DE QUITAÇÃO (Quando selecionado)
     if (paymentType === 'FULL') {

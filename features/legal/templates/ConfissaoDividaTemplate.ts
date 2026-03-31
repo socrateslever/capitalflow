@@ -114,7 +114,12 @@ export const generateConfissaoDividaHTML = (data: LegalDocumentParams, docId?: s
 
                     <p class="indent"><strong>CLÁUSULA PRIMEIRA - DO RECONHECIMENTO:</strong> O(A) <strong>DEVEDOR(A)</strong> confessa ser devedor(a) ao <strong>CREDOR</strong> da importância líquida e certa de <b>${formatMoney(data.totalDebt || data.amount)} (${numberToWordsBRL(data.totalDebt || data.amount)})</b>, valor este que engloba o capital e encargos convencionados.</p>
                     
-                    <p class="indent"><strong>CLÁUSULA SEGUNDA - PAGAMENTO:</strong> O pagamento será realizado conforme cronograma abaixo:</p>
+                    <p class="indent"><strong>CLÁUSULA SEGUNDA - PAGAMENTO:</strong> ${
+                      (data.installments?.length || 0) > 1 
+                        ? `O pagamento será realizado de forma <strong>PARCELADA (${data.billingCycle || 'MENSAL'})</strong>, em ${data.installments?.length} parcelas, conforme cronograma abaixo:`
+                        : `O pagamento será realizado em <strong>PARCELA ÚNICA</strong>, na data de <b>${data.installments?.[0]?.dueDate ? new Date(data.installments[0].dueDate).toLocaleDateString('pt-BR') : '[DATA_VENCIMENTO]'}</b>.`
+                    }</p>
+                    ${(data.installments?.length || 0) > 1 ? `
                     <table>
                         <thead>
                             <tr style="background: #f5f5f5;">
@@ -127,6 +132,7 @@ export const generateConfissaoDividaHTML = (data: LegalDocumentParams, docId?: s
                             ${installmentsHtml}
                         </tbody>
                     </table>
+                    ` : ''}
 
                     <p class="indent"><strong>CLÁUSULA TERCEIRA - MORA:</strong> O inadimplemento de qualquer parcela acarretará o vencimento antecipado do saldo devedor, acrescido de multa de 10%, juros de 1% a.m. e honorários de 20%.</p>
                     

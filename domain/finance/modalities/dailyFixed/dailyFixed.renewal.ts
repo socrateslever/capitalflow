@@ -36,7 +36,7 @@ export const renewDailyFixed = (
     const newDueDateISO = toISODateOnlyUTC(addDaysUTC(baseDate, daysToAdd));
 
     const currentPrincipalRemaining = Number(inst.principalRemaining) || 0;
-    const principalPaidNow = (Number(allocation?.principalPaid) || 0) + (Number(allocation?.avGenerated) || 0);
+    const principalPaidNow = (Number(allocation?.paidPrincipal) || 0) + (Number(allocation?.avGenerated) || 0);
 
     const newPrincipalRemaining = Math.max(0, currentPrincipalRemaining - principalPaidNow);
     

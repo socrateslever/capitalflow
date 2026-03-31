@@ -299,11 +299,11 @@ export const agreementService = {
               lateFee,
             });
 
-            lateFee -= allocation.lateFeePaid;
-            interest -= allocation.interestPaid;
-            principal -= allocation.principalPaid;
+            lateFee -= allocation.paidLateFee;
+            interest -= allocation.paidInterest;
+            principal -= allocation.paidPrincipal;
             remainingToAbate = allocation.avGenerated;
-            paidTotal += allocation.lateFeePaid + allocation.interestPaid + allocation.principalPaid;
+            paidTotal += allocation.paidLateFee + allocation.paidInterest + allocation.paidPrincipal;
           }
 
           const isPaid = (principal + interest + lateFee) <= 0.05;
@@ -379,10 +379,10 @@ export const agreementService = {
     // 1. Registra na tabela de pagamentos de acordo (Audit Log)
     const { error: txAuditError } = await supabase.from('acordo_pagamentos').insert({
       id: paymentId,
-      acordo_parcela_id: installment.id,
+      parcela_id: installment.id,
       acordo_id: agreement.id || agreement.acordo_id,
-      valor_pago: amount,
-      data_pagamento: new Date().toISOString(),
+      amount: amount,
+      paid_at: new Date().toISOString(),
       profile_id: activeUser.id
     });
 
@@ -469,9 +469,9 @@ export const agreementService = {
 
     const { data: originalTx, error: fetchError } = await supabase
       .from('acordo_pagamentos')
-      .select('id, valor_pago')
-      .eq('acordo_parcela_id', installment.id)
-      .order('data_pagamento', { ascending: false })
+      .select('id, amount')
+      .eq('parcela_id', installment.id)
+      .order('paid_at', { ascending: false })
       .limit(1)
       .maybeSingle();
 
@@ -495,7 +495,7 @@ export const agreementService = {
     if (instError) throw instError;
 
     if (loanId) {
-      const amountToReverse = originalTx ? originalTx.valor_pago : (installment.valor_pago || installment.paid_amount || 0);
+      const amountToReverse = originalTx ? originalTx.amount : (installment.valor_pago || installment.paid_amount || 0);
 
       await supabase.from('transacoes').insert({
         id: generateUUID(),

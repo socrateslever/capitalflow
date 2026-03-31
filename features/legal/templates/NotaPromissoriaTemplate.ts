@@ -66,7 +66,7 @@ export const generateNotaPromissoriaHTML = (data: LegalDocumentParams, docId?: s
 
             <div class="content">
                 <p>
-                    Aos <b>${new Date(data.contractDate).getDate()}</b> dias do mês de <b>${new Date(data.contractDate).toLocaleDateString('pt-BR', {month: 'long'})}</b> de <b>${new Date(data.contractDate).getFullYear()}</b>, pagarei(emos) por esta única via de <b>NOTA PROMISSÓRIA</b> a <b>${vm.creditorName}</b>, inscrito(a) no CPF/CNPJ sob o nº ${vm.creditorDoc}, ou à sua ordem, a quantia líquida e certa de <b>${vm.totalDebt}</b>, em moeda corrente deste país.
+                    Aos <b>${new Date(data.contractDate).getDate()}</b> dias do mês de <b>${new Date(data.contractDate).toLocaleDateString('pt-BR', {month: 'long'})}</b> de <b>${new Date(data.contractDate).getFullYear()}</b>, pagarei(emos) por esta única via de <b>NOTA PROMISSÓRIA</b> a <b>${vm.creditorName}</b>, inscrito(a) no CPF/CNPJ sob o nº ${vm.creditorDoc}, ou à sua ordem, a quantia líquida e certa de <b>${vm.totalDebt}</b>${data.installments.length > 1 ? `, em ${data.installments.length} parcelas de ${formatMoney(data.installments[0].amount)},` : ''} em moeda corrente deste país.
                 </p>
                 <p style="font-size: 10pt; margin-top: 20px;">
                     <b>Praça de Pagamento:</b> ${vm.city}.

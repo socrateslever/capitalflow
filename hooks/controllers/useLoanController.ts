@@ -220,7 +220,13 @@ export const useLoanController = (
       }
     } finally {
       ui.closeModal();
-      ui.setSelectedLoanId(null);
+      
+      // ✅ Se o alvo da ação era o contrato selecionado, limpa-o e volta pro início
+      if (ui.selectedLoanId && (typeof ui.confirmation.target === 'string' ? ui.confirmation.target === ui.selectedLoanId : ui.confirmation.target?.id === ui.selectedLoanId)) {
+        ui.setSelectedLoanId(null);
+        // Não podemos usar routerNavigate direto aqui sem o hook, mas o App.tsx cuidará da limpeza de URL ao ver selectedLoanId=null se ajustarmos
+      }
+      
       await fetchFullData(ownerId);
     }
   };

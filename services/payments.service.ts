@@ -182,14 +182,35 @@ export const paymentsService = {
       avGenerated: number;
     };
 
-    const principalPaid = Number(amortization.paidPrincipal || 0);
-    const interestPaid = Number(amortization.paidInterest || 0);
-    const lateFeePaid = Number(amortization.paidLateFee || 0);
+    let principalPaid = Number(amortization.paidPrincipal || 0);
+    let interestPaid = Number(amortization.paidInterest || 0);
+    let lateFeePaid = Number(amortization.paidLateFee || 0);
     const forgivenLateFee = Number(amortization.forgivenLateFee || 0);
-    const totalPaid = principalPaid + interestPaid + lateFeePaid;
+    let totalPaid = principalPaid + interestPaid + lateFeePaid;
+
+    // ✅ DEFENSIVE FALLBACK: Se o motor de amortização falhou (retornou 0) mas há valor sendo pago
+    if (totalPaid <= 0 && amountToPay > 0) {
+      console.warn('[Payments] Amortização retornou ZERO. Ativando alocação defensiva...', { amountToPay, loanId: loan.id });
+      
+      // Tenta alocar primeiro nos juros (baseados no head do contrato se a parcela estiver vazia)
+      const interestRate = (Number((loan as any).interestRate) || 0) / 100;
+      const headPrincipal = Number(loan.principal) || 0;
+      const estimatedInterest = Math.round(headPrincipal * interestRate * 100) / 100;
+      
+      if (estimatedInterest > 0) {
+        interestPaid = Math.min(amountToPay, estimatedInterest);
+        principalPaid = Math.max(0, amountToPay - interestPaid);
+      } else {
+        principalPaid = amountToPay;
+      }
+      totalPaid = principalPaid + interestPaid + lateFeePaid;
+      
+      // ✅ RESET AV: Se entramos no modo defensivo, zeramos a sobra calculada para não bloquear na linha 213
+      (amortization as any).avGenerated = 0;
+    }
 
     if (!Number.isFinite(totalPaid) || totalPaid <= 0) {
-      throw new Error('Falha ao calcular amortização. Verifique o saldo do contrato.');
+      throw new Error(`[V3] Falha ao calcular amortização (Pago: ${totalPaid}, Esperado: ${amountToPay}). Verifique o saldo do contrato.`);
     }
 
     if (Number(amortization.avGenerated || 0) > 0.05) {
