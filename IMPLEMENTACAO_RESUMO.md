@@ -1,5 +1,18 @@
 # IMPLEMENTACAO_RESUMO
 
+## Atualizacao - Estabilização e Correções de Perfil (2026-04-17)
+
+### Escopo executado
+Correções críticas para o erro "Perfil não encontrado" e estabilização de dados financeiros.
+
+1.  **Sincronização de Perfil**: Fix no logout imediato. `useAuth` agora cria perfis usando o ID do Auth User. `useAppState` resolve perfis de forma resiliente por ID ou User_ID.
+2.  **Dashboard Preciso**: Filtro de clientes "TESTE" implementado para isolar métricas reais de simulações.
+3.  **Capital na Rua**: Cálculo ajustado para refletir o saldo devedor total (parcelado diluído).
+4.  **CPF Opcional**: Flexibilização no cadastro de clientes.
+5.  **Recálculo Central**: Botão adicionado para sincronização manual do balanço do perfil.
+
+---
+
 Data: 2026-03-24
 
 ## Escopo desta etapa

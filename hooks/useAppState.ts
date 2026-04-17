@@ -136,47 +136,37 @@ export const useAppState = (activeProfileId: string | null, onProfileNotFound?: 
     // Antes de buscar dados, verifica se a sessão do Supabase ainda é válida
     const { data: { session } } = await supabase.auth.getSession();
     
-    // 🔥 CORREÇÃO: Se houver mismatch entre profileId solicitado e sessão logada, 
-    // e não for o modo DEMO, força o uso do ID da sessão para evitar vazamento ou erro de RLS.
-    let effectiveProfileId = profileId;
-    if (session?.user && profileId !== 'DEMO' && session.user.id !== profileId) {
-      console.warn("[useAppState] Mismatch detectado. Forçando perfil da sessão.", { requested: profileId, session: session.user.id });
-      effectiveProfileId = session.user.id;
-    }
+    // 🔥 CORREÇÃO: Resiliência na identificação do perfil.
+    // O ID solicitado pode ser um UUID aleatório ou o ID do próprio Auth User.
+    // Buscamos um perfil que coincida com o ID solicitado ou que pertença ao usuário logado.
+    const searchId = profileId === 'DEMO' ? 'DEMO' : profileId;
 
-    const isDev = window.location.hostname === 'localhost' || window.location.hostname.includes('run.app');
-    if (isDev) {
-      console.log('[useAppState] fetchFullData:', { 
-        profileId: effectiveProfileId, 
-        sessionUserId: session?.user?.id,
-        match: session?.user?.id === effectiveProfileId
-      });
-    }
-
-    if (!session?.user && effectiveProfileId !== 'DEMO') {
-      console.log("[useAppState] Sem sessão válida, abortando fetch");
-      setLoadError('SESSAO_EXPIRADA');
-      setIsLoadingData(false);
-      return;
-    }
-
-    if (effectiveProfileId === 'DEMO') {
+    if (searchId === 'DEMO') {
       setActiveUser(DEMO_USER);
       setProfileEditForm(DEMO_USER);
       setNavOrder(DEFAULT_NAV);
       setHubOrder(DEFAULT_HUB);
       return;
     }
-
+    
     setIsLoadingData(true);
     setLoadError(null);
 
     try {
-      const { data: profileData, error } = await supabase
-        .from('perfis')
-        .select('*')
-        .eq('id', effectiveProfileId)
-        .maybeSingle();
+      let query = supabase.from('perfis').select('*');
+      
+      if (searchId === 'DEMO') {
+        query = query.eq('id', 'DEMO');
+      } else if (session?.user) {
+        // Busca o perfil pelo ID solicitado OU pelo ID do usuário logado (Foreign Key)
+        query = query.or(`id.eq."${searchId}",user_id.eq."${session.user.id}"`);
+      } else {
+        query = query.eq('id', searchId);
+      }
+
+      const { data: dbProfiles, error } = await query
+        .order('created_at', { ascending: false })
+        .limit(1);
 
       if (error) {
         setLoadError(error.message);
@@ -184,14 +174,16 @@ export const useAppState = (activeProfileId: string | null, onProfileNotFound?: 
         return;
       }
 
+      const profileData = dbProfiles?.[0];
+
       if (!profileData) {
         // 🔥 SEGURANÇA MÁXIMA: Se o perfil não existe no banco, criamos um virtual em memória
         // para que o usuário NUNCA seja expulso do sistema se estiver autenticado no Auth.
         console.warn("[useAppState] Perfil não encontrado no banco. Usando perfil virtual.");
         
         const virtualUser: UserProfile = {
-          id: effectiveProfileId,
-          profile_id: effectiveProfileId,
+          id: searchId,
+          profile_id: searchId,
           name: session?.user?.email?.split('@')[0] || 'Novo Gestor',
           fullName: session?.user?.email?.split('@')[0] || 'Novo Gestor',
           email: session?.user?.email || '',
@@ -267,7 +259,7 @@ export const useAppState = (activeProfileId: string | null, onProfileNotFound?: 
       setLoans(mappedLoans);
       setStaffMembers(mappedStaff);
 
-      writeCache(effectiveProfileId, {
+      writeCache(searchId, {
         activeUser: u,
         clients: mappedClients,
         sources: mappedSources,

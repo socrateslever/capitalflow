@@ -184,14 +184,15 @@ export const useAuth = () => {
       if (isDev) console.warn('[AUTH_BOOT] Perfil não encontrado. Iniciando criação de emergência...');
       
       try {
-        const newProfileId = crypto.randomUUID();
         const { data: newProfile, error: createError } = await supabase.from('perfis').insert({
-          id: newProfileId,
+          id: user.id, // ✅ ID do perfil = ID do Auth (Garante consistência total)
           user_id: user.id,
           email: user.email,
-          usuario_email: user.email,
-          nome_exibicao: user.email?.split('@')[0] || 'Novo Gestor',
-          access_level: 'ADMIN',
+          usuario_email: user.email || '',
+          nome_operador: user.email?.split('@')[0] || 'Gestor',
+          nome_exibicao: user.email?.split('@')[0] || 'Gestor',
+          access_level: 1, // Admin
+          perfil: 'MASTER',
           created_at: new Date().toISOString()
         }).select().single();
 
