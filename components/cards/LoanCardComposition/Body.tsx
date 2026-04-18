@@ -79,7 +79,7 @@ export const Body: React.FC<BodyProps> = ({
                 )}
             </div>
 
-            {/* Seção de Unificação (Estética Premium) */}
+            {/* Seção de Unificação */}
             {unifiedChildren.length > 0 && (
                 <div className="space-y-3 bg-slate-900/40 p-4 rounded-[1.5rem] border border-slate-800/50">
                     <div className="flex items-center gap-3">

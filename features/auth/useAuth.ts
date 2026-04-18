@@ -1,6 +1,6 @@
 // feature/auth/useAuth.ts
 import { useEffect, useState, useRef, useCallback } from 'react';
-import { supabase } from '../../lib/supabase';
+import { supabase, getSynchronizedSession } from '../../lib/supabase';
 import { requestBrowserNotificationPermission } from '../../utils/notifications';
 import { asString } from '../../utils/safe';
 import { playNotificationSound } from '../../utils/notificationSound';
@@ -12,6 +12,7 @@ type SavedProfile = {
   id: string;
   name: string;
   email: string;
+  supportPhone?: string;
 };
 
 const resolveSmartName = (p: any): string => {
@@ -49,13 +50,22 @@ const mapLoginError = (err: any) => {
   let raw = String(err?.message || err || '');
   const l = raw.toLowerCase();
 
+  // Tratamento específico para falhas críticas de serviço (Supabase)
+  if (raw.includes('/auth/v1/token')) {
+    return 'Falha ao validar acesso com o servidor de autenticação (Supabase). Tente novamente em instantes.';
+  }
+  
+  if (raw.includes('/rest/v1/perfis') || raw.includes('/rest/v1/rpc/check_')) {
+    return 'O servidor de dados está demorando para responder. Verifique sua conexão ou tente recarregar a página.';
+  }
+
   if (
     l.includes('network') ||
     l.includes('failed to fetch') ||
     l.includes('load failed') ||
     l.includes('connection error')
   ) {
-    return 'Falha de conexão. Verifique a internet.';
+    return 'Falha de conexão com os servidores. Verifique sua internet ou VPN.';
   }
 
   if (raw.startsWith('AUTH_SIGNIN_FAILED:')) {
@@ -73,6 +83,10 @@ const mapLoginError = (err: any) => {
   if (l2.includes('email not confirmed')) return 'E-mail não confirmado.';
   if (l2.includes('refresh token not found') || l2.includes('invalid refresh token')) {
     return 'Sessão expirada. Faça login novamente.';
+  }
+
+  if (l2.includes('lock') && l2.includes('stole')) {
+    return 'Conflito de sessão detectado. O sistema está se recuperando automaticamente...';
   }
 
   return raw || 'Erro desconhecido no login.';
@@ -104,7 +118,7 @@ export const useAuth = () => {
     const cleanEmail = String(email || '').toLowerCase().trim();
     const cleanPass = String(pass || '');
 
-    const { data: s, error: sessionError } = await supabase.auth.getSession();
+    const { data: s, error: sessionError } = await getSynchronizedSession();
 
     if (sessionError) {
       if (isDev) console.warn('[AUTH_SYNC] erro sessão:', sessionError.message);
@@ -172,9 +186,11 @@ export const useAuth = () => {
       
       const profileName = resolveSmartName(profile);
       const profileEmail = asString(profile.usuario_email || profile.email || profile.auth_email) || user.email || '';
+      const supportPhone = asString(profile.support_phone || profile.supportPhone);
+      
       const savedList = JSON.parse(localStorage.getItem('cm_saved_profiles') || '[]');
       const updated = [
-        { id: profile.id, name: profileName, email: profileEmail },
+        { id: profile.id, name: profileName, email: profileEmail, supportPhone },
         ...savedList.filter((p: any) => p.id !== profile.id),
       ].slice(0, 5);
       setSavedProfiles(updated);
@@ -251,8 +267,8 @@ export const useAuth = () => {
         }
       }
 
-      if (isDev) console.log('[AUTH_BOOT] Obtendo sessão do Supabase...');
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      if (isDev) console.log('[AUTH_BOOT] Obtendo sessão sincronizada...');
+      const { data: { session }, error: sessionError } = await getSynchronizedSession();
 
       if (sessionError) {
         if (isDev) console.warn('[AUTH_BOOT] Erro ao obter sessão:', sessionError.message);
@@ -309,6 +325,19 @@ export const useAuth = () => {
     }
   }, [isDev, resolveAndSetProfile]);
 
+  // Safety Timeout for Boot
+  useEffect(() => {
+    if (!bootFinished) {
+      const timer = setTimeout(() => {
+        if (!bootFinished && mountedRef.current) {
+          if (isDev) console.warn('[AUTH_BOOT] Timeout de segurança atingido. Forçando bootFinished=true');
+          setBootFinished(true);
+        }
+      }, 15000); // 15 segundos para dar tempo ao boot real
+      return () => clearTimeout(timer);
+    }
+  }, [bootFinished]);
+
   useEffect(() => {
     if (isDev) console.log('[AUTH] Boot effect running');
     boot();
@@ -347,6 +376,7 @@ export const useAuth = () => {
     const profileName = resolveSmartName(profile);
     const profileEmail =
       asString(profile.usuario_email || profile.email || profile.auth_email);
+    const supportPhone = asString(profile.support_phone || profile.supportPhone);
 
     if (!profileEmail || !profileEmail.includes('@')) {
       if (isDev) console.warn('[AUTH] Perfil sem e-mail válido para persistência', profile.id);
@@ -363,7 +393,7 @@ export const useAuth = () => {
     trackAccess(profileId);
 
     const updated = [
-      { id: profileId, name: profileName, email: profileEmail },
+      { id: profileId, name: profileName, email: profileEmail, supportPhone },
       ...savedProfiles.filter((p) => p.id !== profileId && p.email?.includes('@')),
     ].slice(0, 5);
 
@@ -479,7 +509,7 @@ export const useAuth = () => {
   };
 
   const handleSelectSavedProfile = async (p: SavedProfile, showToast: any) => {
-    const { data: s } = await supabase.auth.getSession();
+    const { data: s } = await getSynchronizedSession();
     if (s.session && s.session.user.email?.toLowerCase() === p.email.toLowerCase()) {
       setActiveProfileId(p.id);
       trackAccess(p.id);

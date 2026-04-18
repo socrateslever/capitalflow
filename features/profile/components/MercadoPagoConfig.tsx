@@ -1,17 +1,22 @@
 
 import React, { useState, useEffect } from 'react';
-import { CreditCard, ExternalLink, Save, ShieldCheck, AlertCircle } from 'lucide-react';
+import { CreditCard, ExternalLink, Save, ShieldCheck, AlertCircle, Copy, CheckCircle2 } from 'lucide-react';
 import { paymentConfigService } from '../../../services/paymentConfig.service';
 
 interface MercadoPagoConfigProps {
   profileId: string;
-  showToast: (msg: string, type?: 'success' | 'error') => void;
+  showToast: (msg: string, type?: 'success' | 'error' | 'info') => void;
 }
 
 export const MercadoPagoConfig: React.FC<MercadoPagoConfigProps> = ({ profileId, showToast }) => {
   const [accessToken, setAccessToken] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  const webhookUrl = `${window.location.protocol}//${window.location.host.includes('localhost') ? 'hzchchbxkhryextaymkn.supabase.co' : window.location.host}/functions/v1/mp-webhook`;
+  // Na verdade, a URL do webhook do Supabase é sempre baseada no projeto ID
+  const projectWebhookUrl = `https://hzchchbxkhryextaymkn.supabase.co/functions/v1/mp-webhook`;
 
   useEffect(() => {
     const loadConfig = async () => {
@@ -48,6 +53,13 @@ export const MercadoPagoConfig: React.FC<MercadoPagoConfigProps> = ({ profileId,
     }
   };
 
+  const handleCopy = () => {
+    navigator.clipboard.writeText(projectWebhookUrl);
+    setCopied(true);
+    showToast('URL do Webhook copiada!', 'info');
+    setTimeout(() => setCopied(false), 2000);
+  };
+
   if (isLoading) {
     return (
       <div className="animate-pulse space-y-4">
@@ -61,7 +73,7 @@ export const MercadoPagoConfig: React.FC<MercadoPagoConfigProps> = ({ profileId,
     <div className="space-y-6">
       <div className="flex items-center gap-3 text-blue-500">
         <CreditCard size={24} />
-        <h3 className="text-lg font-black uppercase">Mercado Pago (Multi-Conta)</h3>
+        <h3 className="text-lg font-black uppercase">Mercado Pago (Configuração Individual)</h3>
       </div>
 
       <div className="bg-blue-900/10 border border-blue-900/30 p-4 rounded-xl flex gap-3">
@@ -72,7 +84,8 @@ export const MercadoPagoConfig: React.FC<MercadoPagoConfigProps> = ({ profileId,
         </div>
       </div>
 
-      <div className="space-y-4 bg-slate-950 p-6 rounded-2xl border border-slate-800">
+      <div className="space-y-6 bg-slate-950 p-6 rounded-2xl border border-slate-800">
+        {/* ACCESS TOKEN */}
         <div>
           <label className="text-[10px] font-black text-slate-500 uppercase ml-1 flex items-center justify-between mb-2">
             <span>Seu Access Token Produção</span>
@@ -91,16 +104,42 @@ export const MercadoPagoConfig: React.FC<MercadoPagoConfigProps> = ({ profileId,
                 value={accessToken}
                 onChange={(e) => setAccessToken(e.target.value)}
                 placeholder="APP_USR-..."
-                className="w-full bg-slate-900 border border-slate-800 rounded-xl p-4 text-white font-mono text-sm outline-none focus:border-blue-500 transition-all"
+                className="w-full bg-slate-900 border border-slate-800 rounded-xl p-4 text-white font-mono text-sm outline-none focus:border-blue-500 transition-all shadow-inner"
               />
               {accessToken && (
                 <div className="absolute right-4 top-1/2 -translate-y-1/2 flex gap-2">
-                   <div className="px-2 py-0.5 bg-blue-600/20 text-blue-400 text-[10px] font-bold rounded uppercase">Ativo</div>
+                   <div className="px-2 py-0.5 bg-blue-600/20 text-blue-400 text-[10px] font-bold rounded uppercase flex items-center gap-1">
+                     <CheckCircle2 size={10} /> Ativo
+                   </div>
                 </div>
               )}
           </div>
           <p className="text-[9px] text-slate-600 mt-2 font-medium">
-            Nunca compartilhe seu Access Token com terceiros. Ele é usado apenas para gerar cobranças em seu nome.
+            Nunca compartilhe seu Access Token. Ele é usado apenas para gerar cobranças em seu nome.
+          </p>
+        </div>
+
+        {/* WEBHOOK URL */}
+        <div className="pt-4 border-t border-slate-900">
+          <label className="text-[10px] font-black text-slate-500 uppercase ml-1 flex items-center justify-between mb-2">
+            <span>URL de Notificação (Webhook)</span>
+            <span className="text-[9px] text-amber-500 font-bold uppercase">Configuração Obrigatória</span>
+          </label>
+          <div className="flex gap-2">
+            <div className="flex-1 bg-slate-900 border border-slate-800 rounded-xl p-3 text-slate-400 font-mono text-[10px] truncate">
+              {projectWebhookUrl}
+            </div>
+            <button
+              onClick={handleCopy}
+              className="px-4 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl transition-all border border-slate-700 flex items-center justify-center gap-2"
+              title="Copiar URL"
+            >
+              {copied ? <CheckCircle2 size={16} className="text-emerald-500" /> : <Copy size={16} />}
+              <span className="text-[10px] font-bold uppercase hidden sm:inline">Copiar</span>
+            </button>
+          </div>
+          <p className="text-[9px] text-slate-500 mt-2 font-medium leading-relaxed">
+            Copie esta URL e cole no campo <span className="text-white">"Modo de Produção &gt; Webhooks"</span> dentro do seu painel do Mercado Pago. Marque os eventos de <span className="text-white">"Pagamentos"</span> e <span className="text-white">"Cobranças"</span>.
           </p>
         </div>
 
@@ -122,8 +161,8 @@ export const MercadoPagoConfig: React.FC<MercadoPagoConfigProps> = ({ profileId,
       <div className="bg-amber-900/10 border border-amber-900/30 p-4 rounded-xl flex gap-3">
         <AlertCircle className="text-amber-500 shrink-0" size={20} />
         <div className="text-[10px] text-slate-400 leading-relaxed font-medium">
-          <p className="text-amber-400 font-bold uppercase mb-1">Aviso Importante</p>
-          Para que o reconhecimento seja <span className="text-white">automático</span>, certifique-se de que sua conta no Mercado Pago permite a recepção de Webhooks. O sistema CapitalFlow já está configurado para monitorar sua conta assim que o token é salvo.
+          <p className="text-amber-400 font-bold uppercase mb-1">Aviso de Baixa Automática</p>
+          Para que o reconhecimento seja <span className="text-white">automático</span>, a URL acima deve estar configurada no seu painel de desenvolvedor do Mercado Pago. Sem isso, você terá que dar baixa manual nos recebimentos.
         </div>
       </div>
     </div>

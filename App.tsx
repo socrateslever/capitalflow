@@ -22,14 +22,16 @@ import { LoadingScreen } from './components/ui/LoadingScreen';
 import { isDev } from './utils/isDev';
 import { Agreement, AgreementInstallment, Loan } from './types';
 import { agreementService } from './features/agreements/services/agreementService';
+import { ModalProvider } from './contexts/ModalContext';
+import { ModalHost } from './components/modals/ModalHost';
+import { filesService } from './services/files.service';
 
 // Lazy loading components for optimization
 const DashboardContainer = lazy(() => import('./containers/DashboardContainer').then(m => ({ default: m.DashboardContainer })));
 const ClientsContainer = lazy(() => import('./containers/ClientsContainer').then(m => ({ default: m.ClientsContainer })));
 const SourcesContainer = lazy(() => import('./containers/SourcesContainer').then(m => ({ default: m.SourcesContainer })));
-const ProfileContainer = lazy(() => import('./containers/ProfileContainer').then(m => ({ default: m.ProfileContainer })));
+const ProfileContainer = lazy(() => import('@/containers/ProfileContainer'));
 const LegalContainer = lazy(() => import('./containers/LegalContainer').then(m => ({ default: m.LegalContainer })));
-const ModalHostContainer = lazy(() => import('./containers/ModalHostContainer').then(m => ({ default: m.ModalHostContainer })));
 
 const OperatorSupportChat = lazy(() => import('./features/support/OperatorSupportChat'));
 const CalendarView = lazy(() => import('./features/calendar/CalendarView'));
@@ -290,39 +292,83 @@ export const App: React.FC = () => {
         }}
         mobileOffset={{ bottom: '80px' }}
       />
+      {/* 
+        AGENDA VIEW - REMOVIDA TEMPORARIAMENTE
+        {activeTab === 'AGENDA' && (
+          <motion.div 
+            key="agenda-view" 
+            initial={{ opacity: 0 }} 
+            animate={{ opacity: 1 }} 
+            exit={{ opacity: 0 }}
+          >
+            <CalendarView
+              activeUser={activeUser}
+              showToast={showToast}
+              onClose={goBack}
+              isStealthMode={ui.isStealthMode}
+              onSystemAction={(type, meta) => {
+                // ... logic kept for reference
+              }}
+            />
+          </motion.div>
+        )}
+      */}
       {isInvitePath ? (
         <>
           {window.location.pathname === '/invite' && <InvitePage />}
           {window.location.pathname === '/setup-password' && <SetupPasswordPage />}
         </>
       ) : (
-        <AppGate
-          portalToken={portalToken}
-          portalCode={portalCode}
-          legalSignToken={legalSignToken}
-          activeProfileId={activeProfileId}
+        <ModalProvider 
+          activeModal={ui?.activeModal}
+          openModal={ui?.openModal}
+          closeModal={ui?.closeModal}
+          ui={ui}
           activeUser={activeUser}
+          clients={clients}
+          sources={sources}
+          loans={loans}
           isLoadingData={isLoadingData || authLoading}
-          loadError={loadError || authLoadError}
-          loginUser={loginUser}
-          setLoginUser={setLoginUser}
-          loginPassword={loginPassword}
-          setLoginPassword={setLoginPassword}
-          submitLogin={() => submitLogin(showToast)}
-          submitTeamLogin={(params, toastArg) => submitTeamLogin(params, toastArg)}
-          savedProfiles={savedProfiles}
-          handleSelectSavedProfile={handleSelectSavedProfile}
-          handleRemoveSavedProfile={handleRemoveSavedProfile}
+          loanCtrl={loanCtrl}
+          clientCtrl={clientCtrl}
+          sourceCtrl={sourceCtrl}
+          paymentCtrl={paymentCtrl}
+          profileCtrl={profileCtrl}
+          adminCtrl={adminCtrl}
+          fileCtrl={fileCtrl}
+          aiCtrl={aiCtrl}
           showToast={showToast}
-          setIsLoadingData={setIsLoadingData}
-          toast={toast}
-          reauthenticate={reauthenticate}
-          onReauthSuccess={() => {
-            setLoadError(null);
-            if (activeProfileId) fetchFullData(activeProfileId);
-          }}
+          fetchFullData={fetchFullData}
+          handleLogout={handleLogout}
         >
-          <AppShell
+          <AppGate
+            portalToken={portalToken}
+            portalCode={portalCode}
+            legalSignToken={legalSignToken}
+            activeProfileId={activeProfileId}
+            activeUser={activeUser}
+            isLoadingData={isLoadingData || authLoading}
+            loadError={loadError || authLoadError}
+            loginUser={loginUser}
+            setLoginUser={setLoginUser}
+            loginPassword={loginPassword}
+            setLoginPassword={setLoginPassword}
+            submitLogin={() => submitLogin(showToast)}
+            submitTeamLogin={(params, toastArg) => submitTeamLogin(params, toastArg)}
+            savedProfiles={savedProfiles}
+            handleSelectSavedProfile={handleSelectSavedProfile}
+            handleRemoveSavedProfile={handleRemoveSavedProfile}
+            showToast={showToast}
+            setIsLoadingData={setIsLoadingData}
+            toast={toast}
+            reauthenticate={reauthenticate}
+            onReauthSuccess={() => {
+              setLoadError(null);
+              if (activeProfileId) fetchFullData(activeProfileId);
+            }}
+            handleLogout={handleLogout}
+          >
+            <AppShell
             toast={toast}
             clearToast={clearToast}
             activeTab={activeTab}
@@ -692,29 +738,27 @@ export const App: React.FC = () => {
 
             <NavHubController ui={ui} setActiveTab={handleSetActiveTab} activeUser={activeUser} hubOrder={hubOrder} />
           </AppShell>
+        </AppGate>
 
-          <div className="relative z-[9999]">
-            <ModalHostContainer
-              ui={ui}
-              activeUser={activeUser}
-              clients={clients}
-              sources={sources}
-              loans={loans}
-              isLoadingData={isLoadingData}
-              loanCtrl={loanCtrl}
-              clientCtrl={clientCtrl}
-              sourceCtrl={sourceCtrl}
-              paymentCtrl={paymentCtrl}
-              profileCtrl={profileCtrl}
-              adminCtrl={adminCtrl}
-              fileCtrl={fileCtrl}
-              aiCtrl={aiCtrl}
-              showToast={showToast}
-              fetchFullData={fetchFullData}
-              handleLogout={handleLogout}
+        <div className="relative z-[9999]">
+          <ModalHost />
+            
+            <input 
+              type="file" 
+              ref={ui?.promissoriaFileInputRef} 
+              className="hidden" 
+              accept="image/*,application/pdf" 
+              onChange={(e) => filesService.handlePromissoriaUpload(e.target.files?.[0] as File, activeUser, String(ui?.promissoriaUploadLoanId), showToast, fetchFullData)}
+            />
+            <input 
+              type="file" 
+              ref={ui?.extraDocFileInputRef} 
+              className="hidden" 
+              accept="image/*,application/pdf" 
+              onChange={(e) => filesService.handleExtraDocUpload(e.target.files?.[0] as File, activeUser, String(ui?.extraDocUploadLoanId), 'CONFISSAO', showToast, fetchFullData)}
             />
           </div>
-        </AppGate>
+        </ModalProvider>
       )}
     </Suspense>
   );

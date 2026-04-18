@@ -1,6 +1,8 @@
 
 export const translateTransactionType = (type: string): string => {
   const translations: Record<string, string> = {
+    'LOAN_INITIAL': 'Contrato Inicial',
+    'INITIAL': 'Inicial',
     'LEND_MORE': 'Novo Aporte',
     'PAYMENT_FULL': 'Quitação',
     'PAYMENT_PARTIAL': 'Pagamento Parcial',
@@ -38,6 +40,9 @@ export const translateTransactionType = (type: string): string => {
     'RENEGOTIATION_CREATED': 'Renegociação Criada',
     'RENEGOTIATION_BROKEN': 'Renegociação Quebrada',
     'CHARGE': 'Encargo Financeiro',
+    'ARCHIVE': 'Arquivamento',
+    'RESTORE': 'Restauração',
+    'EXTERNAL_WITHDRAWAL': 'Resgate Externo',
   };
 
   return translations[type] || type;

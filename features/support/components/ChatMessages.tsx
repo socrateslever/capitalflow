@@ -1,8 +1,9 @@
 
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { SupportMessage } from '../../../services/supportChat.service';
 import { AudioPlayer } from './AudioPlayer';
-import { Check, CheckCheck, FileText, Image as ImageIcon, MapPin, User, ExternalLink, Trash2, ShieldCheck } from 'lucide-react';
+import { Check, CheckCheck, FileText, Image as ImageIcon, MapPin, User, ExternalLink, Trash2, ShieldCheck, AlertCircle } from 'lucide-react';
+import { useModal } from '../../../contexts/ModalContext';
 
 interface ChatMessagesProps {
   messages: SupportMessage[];
@@ -67,9 +68,29 @@ export const ChatMessages: React.FC<ChatMessagesProps> = ({
   }, [messages, scrollRef]);
 
   const handleDelete = (id: string) => {
-    if (confirm('Apagar esta mensagem permanentemente?')) {
-        onDeleteMessage?.(id);
+    // Tenta usar o controlador de confirmação se disponível via hook
+    try {
+        const { loanCtrl } = useModal();
+        if (loanCtrl && loanCtrl.openConfirmation) {
+            loanCtrl.openConfirmation({
+                type: 'DELETE_CHAT_MESSAGE',
+                target: id,
+                title: 'Apagar Mensagem?',
+                message: 'Esta mensagem será removida permanentemente para todos.',
+                onConfirm: async () => {
+                    onDeleteMessage?.(id);
+                }
+            });
+            return;
+        }
+    } catch (e) {
+        // Fallback caso useModal falhe (fora do contexto)
+        console.warn('ModalContext not available in ChatMessages');
     }
+
+    // Se falhar o modal (ex: fora do provider), fazemos delete direto ou aviso
+    // O ideal agora é que o ModalProvider envolva o Chat
+    onDeleteMessage?.(id);
   };
 
   const renderContent = (m: SupportMessage) => {

@@ -96,13 +96,14 @@ const mapProfileFromDB = (data: any): UserProfile => {
     photo: data.avatar_url,
     brandColor: '#2563eb',
     logoUrl: data.logo_url,
+    supportPhone: data.support_phone,
     defaultInterestRate: asNumber(data.default_interest_rate),
     defaultFinePercent: asNumber(data.default_fine_percent),
     defaultDailyInterestPercent: asNumber(data.default_daily_interest_percent),
     targetCapital: asNumber(data.target_capital),
     targetProfit: asNumber(data.target_profit),
-    ui_nav_order: Array.from(new Set(((data.ui_nav_order || DEFAULT_NAV) as any[]).filter(t => t !== 'PERSONAL_FINANCE'))) as AppTab[],
-    ui_hub_order: (hubOrder as any[]).filter(t => t !== 'PERSONAL_FINANCE') as AppTab[],
+    ui_nav_order: Array.from(new Set(((data.ui_nav_order || DEFAULT_NAV) as any[]).filter(t => t !== 'PERSONAL_FINANCE' && t !== 'AGENDA'))) as AppTab[],
+    ui_hub_order: (hubOrder as any[]).filter(t => t !== 'PERSONAL_FINANCE' && t !== 'AGENDA') as AppTab[],
     createdAt: data.created_at
   };
 };
@@ -159,7 +160,8 @@ export const useAppState = (activeProfileId: string | null, onProfileNotFound?: 
         query = query.eq('id', 'DEMO');
       } else if (session?.user) {
         // Busca o perfil pelo ID solicitado OU pelo ID do usuário logado (Foreign Key)
-        query = query.or(`id.eq."${searchId}",user_id.eq."${session.user.id}"`);
+        // 🔥 CORREÇÃO: Removidas aspas duplas desnecessárias que podem quebrar o PostgREST em alguns contextos.
+        query = query.or(`id.eq.${searchId},user_id.eq.${session.user.id}`);
       } else {
         query = query.eq('id', searchId);
       }
@@ -269,15 +271,26 @@ export const useAppState = (activeProfileId: string | null, onProfileNotFound?: 
         hubOrder: u.ui_hub_order || DEFAULT_HUB
       });
 
-    } catch (error: any) {
-      const errMsg = error.message || String(error);
-      console.error('Erro ao carregar dados:', error);
+    } catch (err: any) {
+      const errMsg = err.message || String(err);
+      console.error('Erro ao carregar dados:', err);
+
+      // Se for erro de timeout ou rede, tenta sinalizar de forma clara
+      if (
+        errMsg?.includes('timeout') || 
+        errMsg?.includes('Aborted') || 
+        errMsg?.includes('Failed to fetch') ||
+        errMsg?.includes('Load failed')
+      ) {
+        setLoadError('Erro de conexão ou tempo limite excedido. Verifique sua rede e tente atualizar a página.');
+        return;
+      }
 
       // Se for erro de token inválido, sinaliza necessidade de reauth
       if (
         errMsg?.includes('Refresh Token') || 
         errMsg?.includes('JWT') ||
-        error.code === 'PGRST301' // JWT expired
+        err.code === 'PGRST301' // JWT expired
       ) {
         setLoadError('SESSAO_EXPIRADA');
         return;

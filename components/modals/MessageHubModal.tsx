@@ -1,10 +1,11 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { HandCoins, CalendarClock, ShieldAlert, CheckCircle2 } from 'lucide-react';
 import { Loan } from '../../types';
 import { Modal } from '../ui/Modal';
 import { calculateTotalDue } from '../../domain/finance/calculations';
 import { getDaysDiff } from '../../utils/dateHelpers';
+import { useModal } from '../../contexts/ModalContext';
 
 import { getOrCreatePortalLink } from '../../utils/portalLink';
 
@@ -17,7 +18,8 @@ const getGreeting = (): string => {
 };
 
 export const MessageHubModal = ({ loan, client, onClose }: { loan: Loan, client?: any, onClose: () => void }) => {
-    const [loading, setLoading] = React.useState(false);
+    const [loading, setLoading] = useState(false);
+    const { showToast } = useModal();
 
     const handleSend = async (type: 'WELCOME' | 'REMINDER' | 'LATE' | 'PAID') => {
         setLoading(true);
@@ -100,9 +102,9 @@ export const MessageHubModal = ({ loan, client, onClose }: { loan: Loan, client?
             const url = `https://wa.me/${waPhone}?text=${encodeURIComponent(text)}`;
             window.open(url, '_blank');
             onClose();
-        } catch (error) {
+        } catch (error: any) {
             console.error("Erro ao gerar link do portal", error);
-            alert("Erro ao gerar link do portal. Tente novamente.");
+            showToast("Erro ao gerar link do portal. Tente novamente.", "error");
         } finally {
             setLoading(false);
         }

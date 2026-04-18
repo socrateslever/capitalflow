@@ -373,6 +373,20 @@ const ClientPortalViewContent: React.FC<ClientPortalViewProps> = ({ initialPorta
     nextDueDate: globalSummary.nextDueDate
   });
 
+  const supportPhone = useMemo(() => {
+    return clientContracts[0]?.supportPhone || null;
+  }, [clientContracts]);
+
+  const handleSupportAction = () => {
+    if (supportPhone) {
+      const msg = `Olá, sou ${loggedClient.name} e preciso de suporte com meu contrato.`;
+      const cleanPhone = supportPhone.replace(/\D/g, '');
+      window.open(`https://wa.me/${cleanPhone.startsWith('55') ? '' : '55'}${cleanPhone}?text=${encodeURIComponent(msg)}`, '_blank');
+    } else {
+      setIsChatOpen(true);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-4 gap-4">
@@ -578,14 +592,14 @@ const ClientPortalViewContent: React.FC<ClientPortalViewProps> = ({ initialPorta
           )}
         </div>
         
-        {/* FAB de Suporte Global (Chat Premium) */}
+        {/* Botão de Suporte (WhatsApp do Operador ou Chat Interno) */}
         <button
-          onClick={() => setIsChatOpen(true)}
-          className="fixed bottom-8 right-6 w-16 h-16 bg-blue-600 hover:bg-blue-500 text-white rounded-[1.5rem] shadow-[0_20px_40px_rgba(37,99,235,0.3)] flex items-center justify-center transition-all duration-300 hover:scale-110 active:scale-95 z-[100] group overflow-hidden"
+          onClick={handleSupportAction}
+          className="fixed bottom-8 right-6 w-16 h-16 bg-emerald-600 hover:bg-emerald-500 text-white rounded-[1.5rem] shadow-[0_20px_40px_rgba(16,185,129,0.3)] flex items-center justify-center transition-all duration-300 hover:scale-110 active:scale-95 z-[100] group overflow-hidden"
         >
            <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
            <MessageCircle size={28} className="relative z-10 group-hover:rotate-12 transition-transform" />
-           <div className="absolute top-1 right-1 w-3 h-3 bg-emerald-500 border-2 border-blue-600 rounded-full animate-pulse"></div>
+           <div className="absolute top-1 right-1 w-3 h-3 bg-emerald-400 border-2 border-emerald-600 rounded-full animate-pulse"></div>
         </button>
       </div>
 
@@ -605,7 +619,7 @@ const ClientPortalViewContent: React.FC<ClientPortalViewProps> = ({ initialPorta
         />
       )}
 
-      {/* NOVO CHAT GLOBAL PREMIUM (PortalChatDrawer agora redesenhado) */}
+      {/* NOVO CHAT GLOBAL (PortalChatDrawer agora redesenhado) */}
       {isChatOpen && (
         <PortalChatDrawer 
             loan={clientContracts[0] || { client_id: loggedClient.id }} 

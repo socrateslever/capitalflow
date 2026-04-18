@@ -121,6 +121,7 @@ export const ContractDetailsPage: React.FC<ContractDetailsPageProps> = ({
                 return '⚠';
             case 'LEND_MORE':
             case 'NOVO_APORTE':
+            case 'LOAN_INITIAL':
                 return '🏦';
             case 'CHARGE':
             case 'PAYMENT_INTEREST':

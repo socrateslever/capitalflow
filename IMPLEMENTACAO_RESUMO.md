@@ -1,5 +1,59 @@
 # IMPLEMENTACAO_RESUMO
 
+## Atualizacao - Ajustes Financeiros, Perfil e Portal do Cliente (2026-04-17)
+
+### Escopo executado
+Refinamento do motor de cálculos de atraso, correção de acessibilidade em contexto global (Modais) e personalização de contatos de suporte.
+
+1.  **Revisão Financeira (Modalidade 30 dias)**:
+    -   Corrigido o cálculo de multa e mora diária no arquivo `/domain/finance/modalities/daily30/daily30.calculations.ts`.
+    -   A base de cálculo foi alterada de `Principal` para `Total da Parcela (Principal + Juros Acumulados)`, garantindo que contratos de "Apenas Juros" (Interest-Only) gerem encargos de atraso corretamente sobre o valor devido.
+2.  **Correção de Arquitetura e Portal do Cliente**:
+    -   O `ModalProvider` foi movido no `App.tsx` para envolver o `AppGate`.
+    -   **Resultado**: Resolvido o desaparecimento do botão de chat no Portal do Cliente. O componente `UnifiedChat` (dentro do Portal) agora possui acesso ao `ModalContext` necessário para exibir Toasts e Modais, evitando falhas silenciosas de renderização.
+3.  **Gestão de Contatos de Suporte**:
+    -   Adicionado campo `supportPhone` na interface `UserProfile` e mapeamento completo no banco de dados via `operatorProfileService.ts`.
+    -   **Perfil**: Nova interface no `ProfilePage.tsx` permitindo ao operador configurar o "WhatsApp de Suporte (Mensagens)", utilizado para comunicações automáticas e suporte ao cliente.
+    -   **Segurança**: Centralização do suporte ao operador no `AuthScreen.tsx` (Login), mantendo o número oficial para questões técnicas da plataforma e permitindo que o número operacional seja dinâmico.
+
+### Arquivos alterados
+- `/types.ts`: Adição de `supportPhone`.
+- `/domain/finance/modalities/daily30/daily30.calculations.ts`: Ajuste na base de cálculo de encargos.
+- `/App.tsx`: Reestruturação de providers globais.
+- `/features/profile/services/operatorProfileService.ts`: Persistência do novo campo de suporte.
+- `/pages/ProfilePage.tsx`: UI para edição do número de suporte.
+
+---
+
+## Atualizacao - Refinamento do Chat e Internacionalização (2026-04-17)
+
+### Escopo executado
+Profissionalização do chat, remoção de diálogos nativos bloqueados (iframe) e melhoria da consistência visual/internacionalização.
+
+1.  **Internacionalização**: 
+    -   Traduzido `LOAN_INITIAL` para "Contrato Inicial" em todo o sistema.
+    -   Revisão de placeholders e textos para garantir o uso exclusivo de Português.
+2.  **Remoção de Alertas e Confirmações Nativas**:
+    -   Substituídos `confirm()` e `alert()` por diálogos integrados em `MessageHubModal`, `ChatMessages` e `OperatorSupportChat`.
+    -   Isso garante compatibilidade com o ambiente de iFrame onde alertas nativos costumam ser bloqueados.
+3.  **Arquitetura de UI**:
+    -   Relocação do `ModalProvider` no `App.tsx` para envolver o `AppShell`, permitindo que componentes internos (como o Chat) acessem modais de confirmação e sistema de Toasts.
+    -   Remoção do container redundante `ModalHostContainer.tsx`.
+4.  **Melhoria no Sistema de Confirmação**:
+    -   Adicionado suporte a callbacks `onConfirm` no controlador de confirmação do sistema, permitindo ações genéricas e seguras via UI.
+
+### Arquivos alterados
+- `/utils/translationHelpers.ts`
+- `/components/cards/components/LedgerList.tsx`
+- `/components/modals/MessageHubModal.tsx`
+- `/features/support/components/ChatMessages.tsx`
+- `/features/support/OperatorSupportChat.tsx`
+- `/hooks/controllers/useLoanController.ts`
+- `/App.tsx`
+- `/containers/ModalHostContainer.tsx` (Removido)
+
+---
+
 ## Atualizacao - Estabilização e Correções de Perfil (2026-04-17)
 
 ### Escopo executado
@@ -1709,10 +1763,41 @@ Ocultação das funcionalidades de **Captação** e **Equipe** para simplificaç
   - `components/cards/ProfitCard.tsx`: Adicionado `z-index` aos botões de resgate.
 - **Resultado**: Os números agora refletem a rentabilidade real da operação e o botão de resgate foi blindado contra problemas de sobreposição de layout.
 
-### 15/04/2026 - Correções de Precisão e Segurança de Perfil
-- **Objetivo**: Eliminar erros de ponto flutuante nos cálculos e garantir que o perfil carregado sempre corresponda ao usuário logado.
+### 17/04/2026 - Correção de Loop de Inicialização e Resiliência
+- **Objetivo**: Resolver o problema onde o app ficava preso em "Sincronizando Sistema..." indefinidamente.
 - **Arquivos Alterados**:
-  - `hooks/useAppState.ts`: Adicionada lógica de detecção de mismatch de perfil e correção automática baseada na sessão do Supabase.
-  - `services/maintenance.service.ts`: Implementado arredondamento decimal (`Math.round`) nas somas de lucro para garantir precisão de centavos.
-- **Resultado**: Sistema mais seguro contra inconsistências de sessão e cálculos financeiros matematicamente precisos.
+  - `hooks/useAppState.ts`: 
+    - Corrigida a sintaxe do filtro `.or()` no Supabase (removidas aspas duplas desnecessárias).
+    - Melhorado o tratamento de erros em `fetchFullData` para capturar timeouts e erros de rede.
+  - `features/auth/useAuth.ts`: 
+    - Adicionado um **Safety Timeout** de 15 segundos que força `bootFinished = true` caso o processo de login/perfil do Supabase trave.
+  - `components/AppGate.tsx`: 
+    - Adicionada tela de erro crítica para falhas de carregamento de dados, permitindo ao usuário tentar novamente ou voltar ao login em vez de ficar preso na tela de carregamento.
+- **Resultado**: O aplicativo agora possui mecanismos de fail-safe que garantem o carregamento ou a exibição de um erro claro, eliminando o travamento silencioso na inicialização.
+
+### 17/04/2026 - Correção de Erros de Sincronização e Resiliência de Rede
+- **Objetivo**: Resolver erros intermitentes de "Failed to fetch" e melhorar o diagnóstico de falhas em tempo real.
+- **Arquivos Alterados**:
+  - `utils/fetchWithRetry.ts`: 
+    - Erros de rede agora incluem a URL de destino na mensagem, permitindo identificar exatamente qual serviço está falhando.
+    - Adicionado log de aviso (warn) detalhando o endpoint em cada tentativa de reconexão.
+  - `index.html`: 
+    - Atualizada a **Content Security Policy (CSP)** para incluir domínios de APIs externas necessárias que estavam sendo bloqueadas pelo navegador: `api.tiny.cloud` (notas), `*.asaas.com` e `*.mercadopago.com` (pagamentos).
+  - `hooks/useAppState.ts`: 
+    - Expandido o tratamento de erros para reconhecer padrões como "Failed to fetch" e "Load failed", exibindo uma mensagem amigável com orientação de recarregamento para o usuário.
+- **Resultado**: Redução de erros silenciosos bloqueados pelo navegador e melhoria na capacidade de diagnóstico de problemas de conexão externa.
+
+### 17/04/2026 - Correção de Conflito de Sessão e Auth Stability
+- **Objetivo**: Resolver erros críticos de "Lock broken" e "lock stolen" no Supabase Auth que travavam a inicialização do app.
+- **Arquivos Alterados**:
+  - `lib/supabase.ts`: 
+    - Implementado o utilitário `getSynchronizedSession` que usa uma Promise compartilhada para de-duplicar chamadas concorrentes ao servidor de autenticação.
+    - Isso evita que múltiplos componentes "briguem" pelo bloqueio (lock) do localStorage durante o boot.
+  - `utils/fetchWithRetry.ts`: 
+    - Otimizada a estratégia de retentativa para URLs de `/auth/v1/`.
+    - Reduzido o número de retentativas e o delay inicial para evitar que chamadas de autenticação segurem bloqueios por tempo excessivo, o que causava o erro de "lock stolen".
+  - `features/auth/useAuth.ts`: 
+    - Migradas todas as chamadas de `supabase.auth.getSession()` para o novo `getSynchronizedSession()`.
+    - Atualizado o mapeador de erros para tratar mensagens de conflito de lock de forma amigável para o usuário.
+- **Resultado**: Inicialização do aplicativo muito mais estável e livre de erros de contenção de sessão em ambientes de recarregamento rápido.
 

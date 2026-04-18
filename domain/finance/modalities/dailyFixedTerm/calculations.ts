@@ -1,6 +1,6 @@
 
-import { Loan, Installment, LoanPolicy } from "@/types";
-import { getDaysDiff } from "@/utils/dateHelpers";
+import { Loan, Installment, LoanPolicy } from "../../../../types";
+import { getDaysDiff } from "../../../../utils/dateHelpers";
 import { CalculationResult } from "../types";
 
 const round = (num: number) => Math.round((num + Number.EPSILON) * 100) / 100;
@@ -19,7 +19,11 @@ export const calculateDailyFixedTerm = (loan: Loan, inst: Installment, policy: L
     if (daysLate > 0 && baseForFine > 0) {
         // Multa Fixa apenas sobre o saldo devedor
         const fineFixed = baseForFine * (policy.finePercent / 100);
-        currentLateFee = round(fineFixed);
+        
+        // Juros de Mora Diária (após o fim do prazo)
+        const fineDaily = baseForFine * (policy.dailyInterestPercent / 100) * daysLate;
+        
+        currentLateFee = round(fineFixed + fineDaily);
     }
 
     return {

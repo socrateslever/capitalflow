@@ -187,6 +187,16 @@ export const useLoanController = (
     }
 
     try {
+      // Se tiver callback de confirmação personalizada, executa e encerra
+      if (ui.confirmation.onConfirm) {
+          await ui.confirmation.onConfirm();
+          if (ui.confirmation.successMessage) {
+              showToast(ui.confirmation.successMessage, 'success');
+          }
+          ui.closeModal();
+          return;
+      }
+
       if (ui.confirmation.type === 'REVERSE_TRANSACTION') {
         await ledgerService.reverseTransaction(
           ui.confirmation.target as LedgerEntry,

@@ -163,7 +163,7 @@ export const supportChatService = {
       supabaseClient = supabase,
     } = params;
 
-    // ✅ Permite loanId nulo ou virtual para suporte global
+    // ✅ Permite loanId nulo ou virtual para suporte direto
     if (!profileId) throw new Error('CLIENT sem profileId (client_id). Corrija o context do chat.');
 
     let uid: string | null = null;
@@ -339,11 +339,11 @@ export const supportChatService = {
 
         let contractInfo = contractsMap.get(loanId);
         
-        // Se não achou contrato, pode ser Suporte Global (loanId == profileId)
+        // Se não achou contrato, pode ser Suporte Direto (loanId == profileId)
         if (!contractInfo) {
           // Tenta carregar informações do perfil como fallback (opcional: o ideal seria um map pré-carregado de perfis também)
           // Para evitar N+1 aqui, por enquanto vamos apenas identificar como "Suporte Direto"
-          contractInfo = { name: 'Suporte Direto (Global)', clientId: loanId };
+          contractInfo = { name: 'Suporte Direto', clientId: loanId };
         }
 
         if (!chatsMap.has(loanId)) {

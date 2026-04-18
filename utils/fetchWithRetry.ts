@@ -41,16 +41,32 @@ export async function fetchWithRetry(
       return response;
     } catch (error: any) {
       lastError = error;
+      const urlStr = typeof input === 'string' 
+        ? input 
+        : (input instanceof Request ? input.url : (input instanceof URL ? input.toString() : 'unknown'));
+        
+      const isAuthUrl = urlStr.includes('/auth/v1/');
+      const currentMaxRetries = isAuthUrl ? Math.min(maxRetries, 2) : maxRetries;
+      const currentInitialDelay = isAuthUrl ? initialDelay / 2 : initialDelay;
+
       const isNetworkError = 
         error.message?.includes('Failed to fetch') || 
         error.message?.includes('NetworkError') ||
         error.name === 'TypeError'; // Fetch throws TypeError on network failure
 
-      if (isNetworkError && i < maxRetries) {
-        const delay = initialDelay * Math.pow(2, i);
-        console.warn(`Erro de rede no fetch. Tentativa ${i + 1} de ${maxRetries}. Retentando em ${delay}ms...`);
+      if (isNetworkError && i < currentMaxRetries) {
+        const delay = currentInitialDelay * Math.pow(2, i);
+        console.warn(`Erro de rede no fetch (${urlStr}). Tentativa ${i + 1} de ${currentMaxRetries}. Retentando em ${delay}ms...`);
         await new Promise(resolve => setTimeout(resolve, delay));
         continue;
+      }
+
+      // Adiciona o contexto da URL no erro se falhar permanentemente
+      if (isNetworkError) {
+        const enhancedError = new Error(`${error.message} (URL: ${urlStr})`);
+        (enhancedError as any).name = error.name;
+        (enhancedError as any).originalError = error;
+        throw enhancedError;
       }
 
       throw error;

@@ -64,7 +64,8 @@ export const NavHub: React.FC<NavHubProps> = ({ onClose, onNavigate, userLevel, 
     const displayOrder = ['DASHBOARD' as AppTab, ...hubOrder.filter(tab => 
         tab !== 'DASHBOARD' && 
         tab !== 'TEAM' && 
-        tab !== 'ACQUISITION'
+        tab !== 'ACQUISITION' &&
+        tab !== 'AGENDA'
     )];
 
     return (
@@ -126,12 +127,15 @@ export const NavHub: React.FC<NavHubProps> = ({ onClose, onNavigate, userLevel, 
                     
                     {/* Atalhos fixos de utilitários */}
                     <div className="pt-4 mt-4 border-t border-slate-800/50 space-y-2">
+                        {/* 
+                        AGENDA - REMOVIDA TEMPORARIAMENTE
                         <button onClick={() => { if (!hasDragged) onNavigate('AGENDA' as any); }} className="w-full p-4 bg-slate-950/50 hover:bg-slate-800 border border-slate-800/50 rounded-2xl transition-all group flex items-center gap-4 active:scale-95">
                             <div className="p-3 bg-slate-900 rounded-full text-purple-500 group-hover:scale-110 transition-transform">
                                 <Calendar size={20}/>
                             </div>
                             <span className="font-black text-white uppercase text-[11px] tracking-widest">Agenda</span>
                         </button>
+                        */}
                         <button onClick={() => { if (!hasDragged) onNavigate('SIMULATOR' as any); }} className="w-full p-4 bg-slate-950/50 hover:bg-slate-800 border border-slate-800/50 rounded-2xl transition-all group flex items-center gap-4 active:scale-95">
                             <div className="p-3 bg-slate-900 rounded-full text-blue-400 group-hover:scale-110 transition-transform">
                                 <Calculator size={20}/>

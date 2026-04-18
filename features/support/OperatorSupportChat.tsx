@@ -8,6 +8,7 @@ import { useCampaignNotifications } from '../../hooks/useCampaignNotifications';
 import { UnifiedChat } from '../../components/chat/UnifiedChat';
 import { createSupportAdapter } from '../../components/chat/adapters/supportAdapter';
 import { createCaptacaoAdapter } from '../../components/chat/adapters/captacaoAdapter';
+import { useModal } from '../../contexts/ModalContext';
 
 function diffLabel(ts: string | number | Date) {
   if (!ts) return '';
@@ -33,6 +34,8 @@ export default function OperatorSupportChat({ activeUser, onClose }: { activeUse
   const [searchTerm, setSearchTerm] = useState('');
   const [chatTheme, setChatTheme] = useState<'dark' | 'blue'>('dark');
 
+  const { showToast, loanCtrl } = useModal();
+
   const supportAdapter = useMemo(() => createSupportAdapter('OPERATOR'), []);
   const captacaoAdapter = useMemo(() => createCaptacaoAdapter('OPERATOR'), []);
 
@@ -44,19 +47,26 @@ export default function OperatorSupportChat({ activeUser, onClose }: { activeUse
         ? `Tem certeza que deseja apagar TODO o histórico de conversa com este Lead? Essa ação é irreversível.`
         : `Tem certeza que deseja apagar TODO o histórico de conversa com ${selectedChat.clientName}? Essa ação é irreversível.`;
 
-    if (!confirm(confirmMsg)) return;
-    
-    try {
-        if (isCampaign) {
-            await supportChatService.deleteCampaignChatHistory(selectedChat.session_token);
-        } else {
-            await supportChatService.deleteChatHistory(selectedChat.loanId);
+    loanCtrl.openConfirmation({
+        type: 'DELETE_CHAT_HISTORY',
+        target: selectedChat,
+        title: 'Apagar Histórico?',
+        message: confirmMsg,
+        onConfirm: async () => {
+            try {
+                if (isCampaign) {
+                    await supportChatService.deleteCampaignChatHistory(selectedChat.session_token);
+                } else {
+                    await supportChatService.deleteChatHistory(selectedChat.loanId);
+                }
+                setSelectedChat(null);
+                loadAllData();
+                showToast('Histórico apagado com sucesso!', 'success');
+            } catch (e: any) {
+                showToast('Erro ao apagar histórico: ' + e.message, 'error');
+            }
         }
-        setSelectedChat(null);
-        loadAllData();
-    } catch (e: any) {
-        alert('Erro ao apagar histórico: ' + e.message);
-    }
+    });
   };
 
   const { unreadCampaignCount, clearUnread } = useCampaignNotifications(activeUser);
@@ -102,7 +112,7 @@ export default function OperatorSupportChat({ activeUser, onClose }: { activeUse
 
   const handleSelectContact = (contact: any) => {
       if (contact.type === 'TEAM') {
-          alert("Chat interno de equipe em breve.");
+          showToast("Chat interno de equipe em breve.", "info");
           return;
       }
 
@@ -132,17 +142,24 @@ export default function OperatorSupportChat({ activeUser, onClose }: { activeUse
   };
 
   const handleBulkDelete = async (selectedIds: string[]) => {
-      if (confirm(`Deseja apagar o histórico de ${selectedIds.length} conversas selecionadas?`)) {
-          try {
-              await supportChatService.deleteMultipleChats(selectedIds);
-              await loadAllData();
-              if (selectedChat && selectedIds.includes(selectedChat.loanId)) {
-                  setSelectedChat(null);
+      loanCtrl.openConfirmation({
+          type: 'DELETE_MULTIPLE_CHATS',
+          target: selectedIds,
+          title: 'Apagar Conversas?',
+          message: `Deseja apagar o histórico de ${selectedIds.length} conversas selecionadas?`,
+          onConfirm: async () => {
+              try {
+                  await supportChatService.deleteMultipleChats(selectedIds);
+                  await loadAllData();
+                  if (selectedChat && selectedIds.includes(selectedChat.loanId)) {
+                      setSelectedChat(null);
+                  }
+                  showToast('Conversas apagadas com sucesso!', 'success');
+              } catch (e: any) {
+                  showToast("Erro ao apagar chats: " + e.message, 'error');
               }
-          } catch (e: any) {
-              alert("Erro ao apagar chats: " + e.message);
           }
-      }
+      });
   };
 
   return (

@@ -22,7 +22,7 @@ interface ProfileContainerProps {
   goBack?: () => void;
 }
 
-export const ProfileContainer: React.FC<ProfileContainerProps> = ({
+const ProfileContainer: React.FC<ProfileContainerProps> = ({
   activeUser, clients, loans, sources, ui, profileCtrl, handleLogout, showToast, profileEditForm, setProfileEditForm, fileCtrl, navOrder, hubOrder, saveNavConfig, goBack
 }) => {
   return (
@@ -52,3 +52,5 @@ export const ProfileContainer: React.FC<ProfileContainerProps> = ({
     />
   );
 };
+
+export default ProfileContainer;

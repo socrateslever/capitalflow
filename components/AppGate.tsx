@@ -43,6 +43,7 @@ interface AppGateProps {
 
   reauthenticate: (pass: string) => Promise<void>;
   onReauthSuccess: () => void;
+  handleLogout: () => void;
 }
 
 export const AppGate: React.FC<AppGateProps> = ({
@@ -71,6 +72,7 @@ export const AppGate: React.FC<AppGateProps> = ({
 
   reauthenticate,
   onReauthSuccess,
+  handleLogout,
 }) => {
   // ✅ Hooks SEMPRE antes de qualquer return
   const [reauthPass, setReauthPass] = useState('');
@@ -163,6 +165,46 @@ export const AppGate: React.FC<AppGateProps> = ({
     return <PublicSignaturePage />;
   }
 
+  // 0. Erro crítico de carregamento
+  if (loadError && loadError !== 'SESSAO_EXPIRADA') {
+    return (
+      <div className="min-h-screen bg-slate-950 flex items-center justify-center p-6 text-center">
+        <div className="max-w-md w-full bg-slate-900 border border-slate-800 rounded-3xl p-10 shadow-2xl relative overflow-hidden">
+          <div className="absolute inset-0 bg-rose-600/5 blur-3xl rounded-full pointer-events-none" />
+          
+          <div className="w-20 h-20 bg-rose-950/30 rounded-full flex items-center justify-center mx-auto mb-8 border border-rose-500/20">
+            <AlertTriangle className="text-rose-500" size={40} />
+          </div>
+
+          <h2 className="text-white font-black text-2xl uppercase tracking-tight mb-4 leading-tight">
+            Ops! Algo deu errado na sincronização
+          </h2>
+          
+          <p className="text-slate-400 text-sm font-medium mb-8 leading-relaxed">
+            {loadError === 'Tempo limite de sincronização excedido. Verifique sua conexão ou tente reconectar.' 
+              ? 'Não conseguimos carregar seus dados a tempo. Isso pode ser instabilidade na rede ou um problema temporário no servidor.'
+              : loadError}
+          </p>
+
+          <div className="space-y-3">
+            <button
+              onClick={() => window.location.reload()}
+              className="w-full bg-white hover:bg-slate-100 text-slate-950 font-black uppercase text-xs py-4 rounded-full shadow-lg transition-all flex items-center justify-center gap-2"
+            >
+              Tentar Novamente
+            </button>
+            <button
+              onClick={handleLogout}
+              className="w-full bg-slate-800 hover:bg-slate-700 text-slate-400 font-bold uppercase text-[10px] py-3 rounded-full transition-all"
+            >
+              Voltar ao Login
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   // =========================
   // Rota privada: login
   // =========================
@@ -182,6 +224,7 @@ export const AppGate: React.FC<AppGateProps> = ({
         isLoading={isLoadingData}
         showToast={showToast}
         toast={toast}
+        supportNumber={savedProfiles[0]?.supportPhone}
       />
     );
   }

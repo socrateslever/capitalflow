@@ -96,6 +96,7 @@ export interface UserProfile {
   brandColor?: string;
   zipCode?: string;
   logoUrl?: string;
+  supportPhone?: string;
   targetCapital?: number;
   targetProfit?: number;
   createdAt?: string;
@@ -285,6 +286,7 @@ export interface Loan {
   fundingFeePercent?: number;
   portalToken?: string;
   portalShortcode?: string;
+  supportPhone?: string;
   witnesses?: LegalWitness[];
 }
 

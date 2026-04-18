@@ -66,7 +66,7 @@ export const PortalChatDrawer: React.FC<PortalChatDrawerProps> = ({ loan, isOpen
         ) : (
           <UnifiedChat
             adapter={adapter}
-            context={{ loanId: loanId || clientId, profileId: clientId, clientName: 'Suporte Oficial' }}
+            context={{ loanId: loanId || clientId, profileId: clientId, clientName: 'Atendimento CapitalFlow' }}
             role="CLIENT"
             userId={clientId}
             onClose={onClose}

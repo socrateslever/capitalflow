@@ -5,10 +5,11 @@ import { CalculationResult } from "../types";
 const round = (num: number) => Math.round((num + Number.EPSILON) * 100) / 100;
 
 export const calculateDaily30 = (loan: Loan, inst: Installment, policy: LoanPolicy): CalculationResult => {
-  const principal = Number(inst.principalRemaining);
+  const principal = Number(inst.principalRemaining || 0);
   const interestRemaining = Number(inst.interestRemaining || 0);
+  const overdueBase = round(principal + interestRemaining);
 
-  const daysLate = getDaysDiff(inst.dueDate);
+  const daysLate = Math.max(0, getDaysDiff(inst.dueDate));
 
   let lateInterest = 0;
   let lateFee = 0;
@@ -18,11 +19,11 @@ export const calculateDaily30 = (loan: Loan, inst: Installment, policy: LoanPoli
 
   if (daysLate > 0) {
     lateInterest =
-      round(principal * (policy.dailyInterestPercent / 100) * daysLate);
+      round(overdueBase * (policy.dailyInterestPercent / 100) * daysLate);
 
     lateFee =
       policy.finePercent
-        ? round(principal * (policy.finePercent / 100))
+        ? round(overdueBase * (policy.finePercent / 100))
         : 0;
   }
 
@@ -33,7 +34,9 @@ export const calculateDaily30 = (loan: Loan, inst: Installment, policy: LoanPoli
     principal,
     interest: totalInterest,
     lateFee,
-    baseForFine: principal,
+    finePart: lateFee,
+    moraPart: lateInterest,
+    baseForFine: overdueBase,
     daysLate: Math.max(0, daysLate)
   };
 };

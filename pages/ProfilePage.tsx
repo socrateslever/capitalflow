@@ -12,6 +12,7 @@ import {
   LogOut,
   Mail,
   MapPin,
+  MessageCircle,
   Palette,
   Phone,
   RefreshCw,
@@ -363,7 +364,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
 
                   <div>
                     <label className="text-[10px] font-black text-slate-500 uppercase ml-1 flex items-center gap-1">
-                      <CreditCard size={12} /> Chave PIX Padrão
+                      <CreditCard size={12} /> Chave PIX Padrão (Manual)
                     </label>
                     <input
                       type="text"
@@ -377,6 +378,9 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
                       className="w-full bg-slate-950 border border-slate-800 rounded-xl p-4 text-emerald-400 font-bold outline-none focus:border-emerald-500"
                       placeholder="CPF, Email ou Telefone"
                     />
+                    <p className="text-[9px] text-slate-500 mt-1 ml-1 uppercase font-bold tracking-widest leading-relaxed">
+                      Apenas informativo para o cliente. Para <span className="text-blue-500">baixa automática</span>, configure a aba "Pagamentos Real".
+                    </p>
                   </div>
                 </div>
 
@@ -431,6 +435,27 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
                       }
                       className="w-full bg-slate-950 border border-slate-800 rounded-xl p-4 text-white font-bold outline-none focus:border-blue-500"
                     />
+                  </div>
+
+                  <div>
+                    <label className="text-[10px] font-black text-blue-500 uppercase ml-1 flex items-center gap-1">
+                      <MessageCircle size={12} /> WhatsApp de Suporte (Mensagens)
+                    </label>
+                    <input
+                      type="text"
+                      value={profileEditForm.supportPhone || ''}
+                      onChange={(e) =>
+                        setProfileEditForm({
+                          ...profileEditForm,
+                          supportPhone: maskPhone(e.target.value),
+                        })
+                      }
+                      className="w-full bg-slate-950 border border-blue-900/30 rounded-xl p-4 text-white font-bold outline-none focus:border-blue-500"
+                      placeholder="Número para envio de cobranças"
+                    />
+                    <p className="text-[9px] text-slate-500 mt-1 ml-1 uppercase font-bold tracking-widest">
+                      Número utilizado para enviar mensagens aos clientes via WhatsApp.
+                    </p>
                   </div>
 
                   <div>
@@ -721,7 +746,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
                   </h4>
 
                   <div className="space-y-2">
-                    {navOrder.map((tab) => (
+                    {navOrder.filter(t => t !== 'AGENDA').map((tab) => (
                       <div
                         key={tab}
                         className="bg-slate-950 border border-slate-800 p-3 rounded-xl flex items-center justify-between group"
@@ -761,7 +786,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
                   </h4>
 
                   <div className="space-y-2">
-                    {hubOrder.map((tab) => (
+                    {hubOrder.filter(t => t !== 'AGENDA').map((tab) => (
                       <div
                         key={tab}
                         className="bg-slate-950 border border-slate-800 p-3 rounded-xl flex items-center justify-between group"

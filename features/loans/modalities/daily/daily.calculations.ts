@@ -51,22 +51,30 @@ export const calculateDailyFixedTermInstallments = (
     return { installments: [installment], totalToReceive };
 };
 
-// Novas Modalidades Diárias (Single Installment logic - Diária Livre)
+// Novas Modalidades Diárias (Single Installment logic - Diária Livre ou Ciclo 30)
 export const calculateNewDailyInstallments = (
-  billingCycle: string, // Relaxed type for legacy support
+  billingCycle: string, 
   principal: number,
   rate: number,
   startDateStr: string,
-  fixedDuration: string, // Ignorado para Free
+  fixedDuration: string, 
   existingId?: string,
   skipWeekends: boolean = false
 ): { installments: Installment[], totalToReceive: number } => {
   const baseDate = parseDateOnlyUTC(startDateStr);
   
-  // Para DAILY_FREE, juros não são pré-fixados na parcela inicial (geralmente zero ou só principal)
-  // Mas mantemos a estrutura padrão
+  // Para DAILY_FREE, juros não são pré-fixados na parcela inicial
+  // Para DAILY_30_INTEREST/CAPITAL, calculamos o juros do primeiro ciclo (30 dias)
+  const isCycle30 = billingCycle.includes('DAILY_30');
+  
   let scheduledInterest = 0;
-  let durationDays = 0; // Vencimento imediato (dia seguinte) ou indefinido
+  let durationDays = 0; 
+
+  if (isCycle30) {
+      // Juros do ciclo = Principal * Taxa Mensal
+      scheduledInterest = principal * (rate / 100);
+      durationDays = 30; // Primeiro vencimento em 30 dias
+  }
 
   const totalToReceive = principal + scheduledInterest;
   const dueDate = addDaysUTC(baseDate, durationDays, skipWeekends);
@@ -79,7 +87,14 @@ export const calculateNewDailyInstallments = (
     scheduledInterest: parseFloat(scheduledInterest.toFixed(2)),
     principalRemaining: parseFloat(principal.toFixed(2)),
     interestRemaining: parseFloat(scheduledInterest.toFixed(2)),
-    lateFeeAccrued: 0, avApplied: 0, paidPrincipal: 0, paidInterest: 0, paidLateFee: 0, paidTotal: 0, status: LoanStatus.PENDING, logs: [],
+    lateFeeAccrued: 0, 
+    avApplied: 0, 
+    paidPrincipal: 0, 
+    paidInterest: 0, 
+    paidLateFee: 0, 
+    paidTotal: 0, 
+    status: LoanStatus.PENDING, 
+    logs: [],
     number: 1
   };
 

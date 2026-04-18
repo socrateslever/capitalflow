@@ -362,12 +362,16 @@ const useCreateProfile = (setLoginUser: any, setIsCreatingProfile: any, showToas
   return { form, setForm, handleCreate };
 };
 
-const useRecoveryAndSupport = (setIsRecoveringPassword: any, showToast: any) => {
+const useRecoveryAndSupport = (setIsRecoveringPassword: any, showToast: any, supportNumber?: string) => {
   const [form, setForm] = useState({ email: '', phrase: '', newPassword: '' });
 
   const handleHelpSupport = (type: 'password' | 'access') => {
-    const number = '5592991148103';
-    const msg = type === 'password' ? 'OlÃ¡, esqueci minha senha no CapitalFlow.' : 'OlÃ¡, nÃ£o consigo acessar minha conta.';
+    const number = supportNumber || import.meta.env.VITE_SUPPORT_PHONE || '';
+    if (!number) {
+      showToast('Número de suporte não configurado. Por favor, tente novamente mais tarde.', 'error');
+      return;
+    }
+    const msg = type === 'password' ? 'Olá, esqueci minha senha no CapitalFlow.' : 'Olá, não consigo acessar minha conta.';
     window.open(`https://wa.me/${number}?text=${encodeURIComponent(msg)}`, '_blank');
   };
 
@@ -607,7 +611,8 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
   handleSelectSavedProfile,
   handleRemoveSavedProfile,
   showToast,
-  toast
+  toast,
+  supportNumber
 }) => {
   const [isCreatingProfile, setIsCreatingProfile] = useState(false);
   const [isRecoveringPassword, setIsRecoveringPassword] = useState(false);
@@ -628,7 +633,8 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
   );
   const { form: recoveryForm, setForm: setRecoveryForm, handleHelpSupport, handleRecovery } = useRecoveryAndSupport(
     setIsRecoveringPassword,
-    showToast
+    showToast,
+    supportNumber
   );
 
   const handleDemoMode = () => {
@@ -816,4 +822,5 @@ interface AuthScreenProps {
   handleRemoveSavedProfile: (id: string) => void;
   showToast: (msg: string, type?: any) => void;
   toast?: any;
+  supportNumber?: string;
 }

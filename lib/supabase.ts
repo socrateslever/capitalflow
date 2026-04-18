@@ -32,8 +32,8 @@ const getSafeEnv = (key: string, fallback: string): string => {
 const REAL_URL = 'https://hzchchbxkhryextaymkn.supabase.co';
 const REAL_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh6Y2hjaGJ4a2hyeWV4dGF5bWtuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc3NTk2ODcsImV4cCI6MjA4MzMzNTY4N30.kX6FlTuPkl7XfycwVuZN2mI6e3ed8NaDUoyAHy9L3nc';
 
-const SUPABASE_URL = getSafeEnv('VITE_SUPABASE_URL', REAL_URL);
-const SUPABASE_ANON_KEY = getSafeEnv('VITE_SUPABASE_ANON_KEY', REAL_KEY);
+const SUPABASE_URL = getSafeEnv('VITE_SUPABASE_URL', REAL_URL).trim();
+const SUPABASE_ANON_KEY = getSafeEnv('VITE_SUPABASE_ANON_KEY', REAL_KEY).trim();
 
 if (isDev) {
     console.log('[BOOT] Supabase Initialized with:', {
@@ -53,3 +53,20 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     fetch: fetchWithRetry as any
   }
 });
+
+/**
+ * Utilitário para obter sessão sincronizada, evitando "lock stolen"
+ * causado por múltiplas chamadas concorrentes ao getSession/getUser.
+ */
+let sessionPromise: Promise<any> | null = null;
+export async function getSynchronizedSession() {
+  if (sessionPromise) return sessionPromise;
+  
+  sessionPromise = supabase.auth.getSession().finally(() => {
+    // Limpa a promise após um curto delay para permitir novas verificações se necessário,
+    // mas bloqueando o "frenesi" inicial de boot.
+    setTimeout(() => { sessionPromise = null; }, 500);
+  });
+  
+  return sessionPromise;
+}

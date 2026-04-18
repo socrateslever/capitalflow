@@ -23,36 +23,6 @@ export type AsaasPaymentInput = {
 
 export const asaasService = {
   /**
-   * Busca configuração Asaas do operador
-   */
-  async getConfig(profileId: string) {
-    const { data, error } = await supabase
-      .from('perfis_config_asaas')
-      .select('*')
-      .eq('profile_id', profileId)
-      .maybeSingle();
-    
-    if (error) throw error;
-    return data;
-  },
-
-  /**
-   * Salva configuração Asaas
-   */
-  async saveConfig(profileId: string, apiKey: string) {
-    const { error } = await supabase
-      .from('perfis_config_asaas')
-      .upsert({
-        profile_id: profileId,
-        asaas_api_key: apiKey,
-        updated_at: new Date().toISOString()
-      }, { onConflict: 'profile_id' });
-    
-    if (error) throw error;
-    return true;
-  },
-
-  /**
    * Cria um pagamento no Asaas via Edge Function (Portal)
    */
   async createPaymentPortal(token: string, code: string, input: AsaasPaymentInput) {

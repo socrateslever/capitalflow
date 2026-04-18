@@ -189,6 +189,8 @@ export function mapLoanFromDB(
     portalToken: asString(l?.portal_token ?? l?.portalToken),
     portalShortcode: asString(l?.portal_shortcode ?? l?.portalShortcode),
 
+    supportPhone: asString(l?.support_phone ?? l?.supportPhone),
+
     activeAgreement,
   } as Loan;
 

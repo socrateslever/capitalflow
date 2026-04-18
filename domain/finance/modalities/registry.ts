@@ -6,17 +6,19 @@ import { monthlyStrategy } from "./monthly/index";
 import { dailyFreeStrategy } from "./dailyFree/index";
 import { dailyFixedTermStrategy } from "./dailyFixedTerm/index";
 
+import { daily30Strategy, daily30CapitalStrategy } from "./daily30/index";
+
 // Mapeamento Oficial
 const strategies: Record<string, ModalityStrategy> = {
     'MONTHLY': monthlyStrategy,
     'DAILY_FREE': dailyFreeStrategy,
     'DAILY_FIXED_TERM': dailyFixedTermStrategy,
+    'DAILY_30_INTEREST': daily30Strategy,
+    'DAILY_30_CAPITAL': daily30CapitalStrategy,
 };
 
 // Fallback Map para compatibilidade de dados legados (Migração segura)
 const legacyFallback: Record<string, ModalityStrategy> = {
-    'DAILY_30_INTEREST': dailyFreeStrategy,
-    'DAILY_30_CAPITAL': dailyFreeStrategy,
     'DAILY_FIXED': dailyFreeStrategy,
     'DAILY': monthlyStrategy 
 };
