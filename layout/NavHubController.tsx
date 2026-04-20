@@ -15,9 +15,6 @@ export const NavHubController: React.FC<NavHubControllerProps> = ({ ui, setActiv
   const { unreadCampaignCount, clearUnread } = useCampaignNotifications(activeUser);
 
   const handleNavNavigate = (tab: string, modal?: string) => {
-      if (tab === 'ACQUISITION') {
-          clearUnread();
-      }
 
       if (modal) {
           setActiveTab(modal as any);

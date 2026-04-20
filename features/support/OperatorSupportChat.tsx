@@ -3,11 +3,8 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { ShieldCheck, X, MessageCircle, Palette, ChevronLeft } from 'lucide-react';
 import { supportChatService } from '../../services/supportChat.service';
 import { ChatSidebar } from './components/ChatSidebar';
-import { useCampaignChat } from '../../hooks/useCampaignChat';
-import { useCampaignNotifications } from '../../hooks/useCampaignNotifications';
 import { UnifiedChat } from '../../components/chat/UnifiedChat';
 import { createSupportAdapter } from '../../components/chat/adapters/supportAdapter';
-import { createCaptacaoAdapter } from '../../components/chat/adapters/captacaoAdapter';
 import { useModal } from '../../contexts/ModalContext';
 
 function diffLabel(ts: string | number | Date) {
@@ -28,7 +25,6 @@ export default function OperatorSupportChat({ activeUser, onClose }: { activeUse
   const [activeChats, setActiveChats] = useState<any[]>([]);
   const [contracts, setContracts] = useState<any[]>([]);
   const [teamMembers, setTeamMembers] = useState<any[]>([]);
-  const [campaignLeads, setCampaignLeads] = useState<any[]>([]);
   
   const [selectedChat, setSelectedChat] = useState<any>(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -37,15 +33,11 @@ export default function OperatorSupportChat({ activeUser, onClose }: { activeUse
   const { showToast, loanCtrl } = useModal();
 
   const supportAdapter = useMemo(() => createSupportAdapter('OPERATOR'), []);
-  const captacaoAdapter = useMemo(() => createCaptacaoAdapter('OPERATOR'), []);
 
   const handleDeleteHistory = async () => {
     if (!selectedChat) return;
     
-    const isCampaign = selectedChat.type === 'CAMPAIGN';
-    const confirmMsg = isCampaign 
-        ? `Tem certeza que deseja apagar TODO o histórico de conversa com este Lead? Essa ação é irreversível.`
-        : `Tem certeza que deseja apagar TODO o histórico de conversa com ${selectedChat.clientName}? Essa ação é irreversível.`;
+    const confirmMsg = `Tem certeza que deseja apagar TODO o histórico de conversa com ${selectedChat.clientName}? Essa ação é irreversível.`;
 
     loanCtrl.openConfirmation({
         type: 'DELETE_CHAT_HISTORY',
@@ -54,11 +46,7 @@ export default function OperatorSupportChat({ activeUser, onClose }: { activeUse
         message: confirmMsg,
         onConfirm: async () => {
             try {
-                if (isCampaign) {
-                    await supportChatService.deleteCampaignChatHistory(selectedChat.session_token);
-                } else {
-                    await supportChatService.deleteChatHistory(selectedChat.loanId);
-                }
+                await supportChatService.deleteChatHistory(selectedChat.loanId);
                 setSelectedChat(null);
                 loadAllData();
                 showToast('Histórico apagado com sucesso!', 'success');
@@ -69,12 +57,6 @@ export default function OperatorSupportChat({ activeUser, onClose }: { activeUse
     });
   };
 
-  const { unreadCampaignCount, clearUnread } = useCampaignNotifications(activeUser);
-  const { leads: hookLeads, loadLeads } = useCampaignChat();
-
-  useEffect(() => {
-    setCampaignLeads(hookLeads);
-  }, [hookLeads]);
 
   // Identificação do dono para buscar dados corretos
   const ownerId = activeUser.supervisor_id || activeUser.id;
@@ -93,9 +75,6 @@ export default function OperatorSupportChat({ activeUser, onClose }: { activeUse
     // 3. Equipe
     const team = await supportChatService.getTeamMembers(ownerId);
     setTeamMembers(team);
-
-    // 4. Captação
-    loadLeads();
   };
 
   useEffect(() => {
@@ -108,7 +87,6 @@ export default function OperatorSupportChat({ activeUser, onClose }: { activeUse
   const filteredActive = useMemo(() => activeChats.filter(c => c.clientName?.toLowerCase().includes(searchTerm.toLowerCase())), [activeChats, searchTerm]);
   const filteredClients = useMemo(() => contracts.filter(c => c.clientName?.toLowerCase().includes(searchTerm.toLowerCase())), [contracts, searchTerm]);
   const filteredTeam = useMemo(() => teamMembers.filter(t => t.clientName?.toLowerCase().includes(searchTerm.toLowerCase())), [teamMembers, searchTerm]);
-  const filteredCampaign = useMemo(() => campaignLeads.filter(l => (l.nome?.toLowerCase() || '').includes(searchTerm.toLowerCase()) || (l.whatsapp || '').includes(searchTerm)), [campaignLeads, searchTerm]);
 
   const handleSelectContact = (contact: any) => {
       if (contact.type === 'TEAM') {
@@ -116,16 +94,6 @@ export default function OperatorSupportChat({ activeUser, onClose }: { activeUse
           return;
       }
 
-      if (contact.type === 'CAMPAIGN') {
-          clearUnread();
-          setSelectedChat({
-              id: contact.id,
-              session_token: contact.session_token,
-              clientName: contact.nome || 'Lead sem nome',
-              type: 'CAMPAIGN'
-          });
-          return;
-      }
       
       // Se selecionou um cliente da lista que JÁ tem chat ativo, muda para o chat ativo
       const existingChat = activeChats.find(c => c.loanId === contact.loanId);
@@ -175,13 +143,7 @@ export default function OperatorSupportChat({ activeUser, onClose }: { activeUse
     };
   }, [selectedChat, activeUser.id]);
 
-  const campaignContext = useMemo(() => {
-    if (!selectedChat || selectedChat.type !== 'CAMPAIGN') return null;
-    return { 
-      sessionToken: selectedChat.session_token, 
-      clientName: selectedChat.clientName 
-    };
-  }, [selectedChat]);
+  const campaignContext = null;
 
   return (
     <div className="fixed inset-0 z-[var(--z-support)] w-full h-full bg-slate-950 flex flex-col animate-in fade-in duration-300 font-sans pointer-events-auto">
@@ -220,8 +182,8 @@ export default function OperatorSupportChat({ activeUser, onClose }: { activeUse
             chats={filteredActive}
             clients={filteredClients}
             team={filteredTeam}
-            campaigns={filteredCampaign}
-            unreadCampaignCount={unreadCampaignCount}
+            campaigns={[]}
+            unreadCampaignCount={0}
             selectedChat={selectedChat}
             searchTerm={searchTerm}
             setSearchTerm={setSearchTerm}
@@ -234,18 +196,7 @@ export default function OperatorSupportChat({ activeUser, onClose }: { activeUse
         {/* ÁREA DE CHAT */}
         <div className={`flex-1 flex flex-col relative min-w-0 w-full h-full ${!selectedChat ? 'hidden md:flex' : 'flex'} ${chatTheme === 'blue' ? 'bg-slate-900/50' : 'bg-slate-900'}`}>
           {selectedChat && (selectedChat.type === 'CAMPAIGN' ? campaignContext : supportContext) ? (
-            selectedChat.type === 'CAMPAIGN' ? (
-              <UnifiedChat
-                adapter={captacaoAdapter}
-                context={campaignContext!}
-                role="OPERATOR"
-                userId={activeUser.id}
-                onClose={() => setSelectedChat(null)}
-                chatTheme={chatTheme}
-                showDeleteHistory={true}
-                onDeleteHistory={handleDeleteHistory}
-              />
-            ) : (
+            (
               <UnifiedChat
                 adapter={supportAdapter}
                 context={supportContext!}

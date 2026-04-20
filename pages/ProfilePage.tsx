@@ -91,18 +91,14 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
         return 'Painel';
       case 'CLIENTS':
         return 'Clientes';
-      case 'TEAM':
-        return 'Equipe';
       case 'SOURCES':
         return 'Fundos';
       case 'LEGAL':
         return 'Jurídico';
       case 'PROFILE':
         return 'Perfil';
-      case 'LEADS':
-        return 'Leads';
-      case 'ACQUISITION':
-        return 'Captação';
+      case 'REPORTS':
+        return 'Relatórios';
       default:
         return tab;
     }

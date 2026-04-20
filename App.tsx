@@ -38,11 +38,9 @@ const CalendarView = lazy(() => import('./features/calendar/CalendarView'));
 const SimulatorPanel = lazy(() => import('./features/simulator/SimulatorPanel').then(m => ({ default: m.SimulatorPanel })));
 const FlowModal = lazy(() => import('./components/modals/FlowModal').then(m => ({ default: m.FlowModal })));
 
-const TeamPage = lazy(() => import('./pages/TeamPage').then(m => ({ default: m.TeamPage })));
 const InvitePage = lazy(() => import('./pages/InvitePage').then(m => ({ default: m.InvitePage })));
 const SetupPasswordPage = lazy(() => import('./pages/SetupPasswordPage').then(m => ({ default: m.SetupPasswordPage })));
 const LeadsPage = lazy(() => import('./pages/LeadsPage').then(m => ({ default: m.LeadsPage })));
-const CustomerAcquisitionPage = lazy(() => import('./pages/Comercial/CaptacaoClientes').then(m => ({ default: m.CustomerAcquisitionPage })));
 const ReportsPage = lazy(() => import('./features/reports/pages/ReportsPage').then(m => ({ default: m.ReportsPage })));
 const SettingsPage = lazy(() => import('./pages/SettingsPage').then(m => ({ default: m.SettingsPage })));
 const ContractDetailsPage = lazy(() => import('./pages/ContractDetailsPage').then(m => ({ default: m.ContractDetailsPage })));
@@ -60,7 +58,6 @@ export const App: React.FC = () => {
   const rawPortalCodeParam = urlParams.get('portal_code') || urlParams.get('code');
   const hasPortalAccessParams = !!rawPortalTokenParam && !!rawPortalCodeParam;
 
-  // ✅ Hooks SEMPRE no topo (regra do React)
   const { portalToken, portalCode, legalSignToken: legalSignTokenFromHook } = usePortalRouting();
   const { toast, showToast, clearToast } = useToast();
 
@@ -443,25 +440,6 @@ export const App: React.FC = () => {
                 </motion.div>
               )}
 
-              {/* Desativado temporariamente: TEAM
-              {activeTab === 'TEAM' && !activeUser?.supervisor_id && (
-                <motion.div 
-                  key="team-view" 
-                  initial={{ opacity: 0 }} 
-                  animate={{ opacity: 1 }} 
-                  exit={{ opacity: 0 }}
-                >
-                  <TeamPage
-                    activeUser={activeUser}
-                    showToast={showToast}
-                    onRefresh={() => fetchFullData(activeUser?.id || '')}
-                    ui={ui}
-                    goBack={goBack}
-                    isStealthMode={ui.isStealthMode}
-                  />
-                </motion.div>
-              )}
-              */}
 
               {activeTab === 'SOURCES' && (
                 <motion.div 
@@ -560,18 +538,6 @@ export const App: React.FC = () => {
                 </motion.div>
               )}
 
-              {/* Desativado temporariamente: ACQUISITION
-              {activeTab === 'ACQUISITION' && (
-                <motion.div 
-                  key="acq-view" 
-                  initial={{ opacity: 0 }} 
-                  animate={{ opacity: 1 }} 
-                  exit={{ opacity: 0 }}
-                >
-                  <CustomerAcquisitionPage activeUser={activeUser} goBack={goBack} isStealthMode={ui.isStealthMode} />
-                </motion.div>
-              )}
-              */}
 
               {/* Removido tab SUPPORT não autorizada */}
 
