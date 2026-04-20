@@ -84,19 +84,20 @@ export const generateConfissaoDividaV2HTML = (
   let descricaoPagamento = `será quitado em <strong>PARCELA ÚNICA</strong>`;
   let npTypeDesc = " em parcela única";
 
-  if (data.billingCycle === 'MONTHLY') {
+  if (installmentsCount > 1) {
+    const cycle = data.billingCycle === 'DAILY_FREE' ? 'ROTATIVO' : 'MENSAL';
     const valParcela = installments[0]?.amount ? numberToWordsBRL(installments[0].amount).toUpperCase() : FILL;
     const valFormatado = installments[0]?.amount ? `R$ ${Number(installments[0].amount).toLocaleString('pt-BR', {minimumFractionDigits: 2})}` : FILL;
-    formaPagamento = `CRÉDITO PARCELADO (MENSAL)`;
-    descricaoPagamento = `será quitado de forma <strong>PARCELADA (MENSAL)</strong>, em ${installmentsCount || 1} parcelas mensais e sucessivas de ${valFormatado} (${valParcela})`;
-    npTypeDesc = `, em ${installmentsCount || 1} parcelas de ${valFormatado}`;
+    formaPagamento = `CRÉDITO PARCELADO (${cycle})`;
+    descricaoPagamento = `será quitado de forma <strong>PARCELADA (${cycle})</strong>, em ${installmentsCount} parcelas sucessivas de ${valFormatado} (${valParcela})`;
+    npTypeDesc = `, em ${installmentsCount} parcelas de ${valFormatado}`;
   } else if (data.billingCycle === 'DAILY_FREE') {
     formaPagamento = `CRÉDITO ROTATIVO SOB DEMANDA`;
     descricaoPagamento = `será quitado sob o regime de <strong>CONTA-CORRENTE ROTATIVA</strong>, sem prazo de vencimento pré-fixado para o principal, incidindo encargos pro-rata die até a liquidação final. Os prazos de prestações indicados servem apenas para apuração e amortização periódica de juros`;
     npTypeDesc = ` sob regime rotativo livre`;
   } else {
-    // DAILY_FIXED_TERM ou default
-    formaPagamento = `CRÉDITO DE PRAZO FIXO (PAGAMENTO ÚNICO)`;
+    // Pagamento Único (Mensal Total, Renegociação à vista, ou Prazo Fixo)
+    formaPagamento = `CRÉDITO (PAGAMENTO ÚNICO)`;
     descricaoPagamento = `será quitado integralmente em <strong>PARCELA ÚNICA</strong> com prazo determinado e acrescido dos encargos contratados projetados`;
     npTypeDesc = ` em parcela única integralizada na data acordada`;
   }
