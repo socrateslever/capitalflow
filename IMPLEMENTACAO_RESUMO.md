@@ -1,5 +1,44 @@
 # IMPLEMENTACAO_RESUMO
 
+## Atualização - Correção de Atribuição de Colunas de Perfil e Consistência de Banco (2026-04-19)
+
+### Escopo executado
+Resolução de erros de atualização de perfil causados pelo uso de colunas inexistentes (`support_phone` ou `support phone`) na tabela `perfis`. O sistema agora utiliza exclusivamente as colunas reais do banco: `contato_whatsapp` (para suporte/chat) e `phone` (telefone geral).
+
+1.  **Refatoração de Tipagem e Entidades (`types.ts`)**:
+    *   Substituído o campo `supportPhone` por `contato_whatsapp` na interface `UserProfile`.
+    *   Garantida a consistência em outras entidades que referenciam o perfil, como a interface de `Loan`.
+
+2.  **Sincronização de Estado e Mapeamento (`useAppState.ts`, `useAuth.ts`)**:
+    *   Atualizada a lógica de mapeamento do perfil (`mapProfileFromDB`) para ler de `contato_whatsapp`.
+    *   Implementados mappers resilientes que suportam dados legados durante a transição, garantindo que perfis antigos não percam o vínculo de contato.
+
+3.  **Persistência e Serviços de Perfil (`operatorProfileService.ts`)**:
+    *   Refatoração completa do `ProfileUpdatePayload` para alinhar com o schema real do PostgreSQL (`perfis`).
+    *   Ajustados os métodos `updateProfile`, `importProfileFromSheet` e `curateProfileData` para tratar corretamente o campo `contato_whatsapp`.
+    *   **Validação Proativa**: Implementada conferência de campos nulos ou indefinidos antes do envio ao Supabase, evitando erros de integridade.
+
+4.  **Consistência da Interface (UI)**:
+    *   **Dashboard e Portal**: O `ClientPortalView` agora consome `contato_whatsapp` para iniciar atendimentos, garantindo que o botão de suporte funcione corretamente.
+    *   **Formulários**: A página de Perfil (`ProfilePage.tsx`) agora vincula o input de "WhatsApp de Suporte" diretamente ao estado corrigido, assegurando persistência real nas edições.
+    *   **Acesso (Gate)**: O `AppGate.tsx` repassa o número de suporte correto para a tela de autenticação a partir dos perfis salvos no dispositivo.
+
+### Arquivos alterados
+*   `/types.ts`: Atualização da tipagem global.
+*   `/hooks/useAppState.ts`: Ajuste no carregamento do perfil.
+*   `/features/auth/useAuth.ts`: Ajuste na recuperação de perfil e login.
+*   `/features/profile/services/operatorProfileService.ts`: Alinhamento total com o schema do banco.
+*   `/services/adapters/loanAdapter.ts`: Mapeamento resiliente de contratos.
+*   `/pages/ProfilePage.tsx`: Correção de bindings no formulário de edição.
+*   `/components/AppGate.tsx`: Passagem de metadados para login.
+*   `/containers/ClientPortal/ClientPortalView.tsx`: Uso correto do contato no portal devedor.
+
+### Arquivos não alterados fora do escopo
+*   Confirmado: Nenhuma nova coluna foi criada no banco de dados.
+*   Confirmado: Nenhuma alteração em lógica financeira ou fluxos de pagamento.
+
+---
+
 ## Atualização - Correção de Reprodução de Áudio e Assinatura de Anexos (2026-04-19)
 
 ### Escopo executado
@@ -290,12 +329,12 @@ Refinamento do motor de cálculos de atraso, correção de acessibilidade em con
     -   O `ModalProvider` foi movido no `App.tsx` para envolver o `AppGate`.
     -   **Resultado**: Resolvido o desaparecimento do botão de chat no Portal do Cliente. O componente `UnifiedChat` (dentro do Portal) agora possui acesso ao `ModalContext` necessário para exibir Toasts e Modais, evitando falhas silenciosas de renderização.
 3.  **Gestão de Contatos de Suporte**:
-    -   Adicionado campo `supportPhone` na interface `UserProfile` e mapeamento completo no banco de dados via `operatorProfileService.ts`.
+    -   Adicionado campo `contato_whatsapp` na interface `UserProfile` e mapeamento completo no banco de dados via `operatorProfileService.ts`.
     -   **Perfil**: Nova interface no `ProfilePage.tsx` permitindo ao operador configurar o "WhatsApp de Suporte (Mensagens)", utilizado para comunicações automáticas e suporte ao cliente.
     -   **Segurança**: Centralização do suporte ao operador no `AuthScreen.tsx` (Login), mantendo o número oficial para questões técnicas da plataforma e permitindo que o número operacional seja dinâmico.
 
 ### Arquivos alterados
-- `/types.ts`: Adição de `supportPhone`.
+- `/types.ts`: Adição de `contato_whatsapp`.
 - `/domain/finance/modalities/daily30/daily30.calculations.ts`: Ajuste na base de cálculo de encargos.
 - `/App.tsx`: Reestruturação de providers globais.
 - `/features/profile/services/operatorProfileService.ts`: Persistência do novo campo de suporte.

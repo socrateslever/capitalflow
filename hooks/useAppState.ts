@@ -96,7 +96,7 @@ const mapProfileFromDB = (data: any): UserProfile => {
     photo: data.avatar_url,
     brandColor: '#2563eb',
     logoUrl: data.logo_url,
-    supportPhone: data.support_phone,
+    contato_whatsapp: data.contato_whatsapp,
     defaultInterestRate: asNumber(data.default_interest_rate),
     defaultFinePercent: asNumber(data.default_fine_percent),
     defaultDailyInterestPercent: asNumber(data.default_daily_interest_percent),

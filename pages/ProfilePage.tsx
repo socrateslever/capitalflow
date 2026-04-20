@@ -456,11 +456,11 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
                     </label>
                     <input
                       type="text"
-                      value={profileEditForm.supportPhone || ''}
+                      value={profileEditForm.contato_whatsapp || ''}
                       onChange={(e) =>
                         setProfileEditForm({
                           ...profileEditForm,
-                          supportPhone: maskPhone(e.target.value),
+                          contato_whatsapp: maskPhone(e.target.value),
                         })
                       }
                       className="w-full bg-slate-950 border border-blue-900/30 rounded-xl p-4 text-white font-bold outline-none focus:border-blue-500"

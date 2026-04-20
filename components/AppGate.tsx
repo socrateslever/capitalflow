@@ -224,7 +224,7 @@ export const AppGate: React.FC<AppGateProps> = ({
         isLoading={isLoadingData}
         showToast={showToast}
         toast={toast}
-        supportNumber={savedProfiles[0]?.supportPhone}
+        supportNumber={savedProfiles[0]?.contato_whatsapp}
       />
     );
   }

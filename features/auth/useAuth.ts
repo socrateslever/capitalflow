@@ -12,7 +12,7 @@ type SavedProfile = {
   id: string;
   name: string;
   email: string;
-  supportPhone?: string;
+  contato_whatsapp?: string;
 };
 
 const resolveSmartName = (p: any): string => {
@@ -186,11 +186,11 @@ export const useAuth = () => {
       
       const profileName = resolveSmartName(profile);
       const profileEmail = asString(profile.usuario_email || profile.email || profile.auth_email) || user.email || '';
-      const supportPhone = asString(profile.support_phone || profile.supportPhone);
+      const contato_whatsapp = asString(profile.contato_whatsapp || profile.support_phone || profile.supportPhone);
       
       const savedList = JSON.parse(localStorage.getItem('cm_saved_profiles') || '[]');
       const updated = [
-        { id: profile.id, name: profileName, email: profileEmail, supportPhone },
+        { id: profile.id, name: profileName, email: profileEmail, contato_whatsapp },
         ...savedList.filter((p: any) => p.id !== profile.id),
       ].slice(0, 5);
       setSavedProfiles(updated);
@@ -376,7 +376,7 @@ export const useAuth = () => {
     const profileName = resolveSmartName(profile);
     const profileEmail =
       asString(profile.usuario_email || profile.email || profile.auth_email);
-    const supportPhone = asString(profile.support_phone || profile.supportPhone);
+    const contato_whatsapp = asString(profile.contato_whatsapp || profile.support_phone || profile.supportPhone);
 
     if (!profileEmail || !profileEmail.includes('@')) {
       if (isDev) console.warn('[AUTH] Perfil sem e-mail válido para persistência', profile.id);
@@ -391,9 +391,9 @@ export const useAuth = () => {
 
     setActiveProfileId(profileId);
     trackAccess(profileId);
-
+    
     const updated = [
-      { id: profileId, name: profileName, email: profileEmail, supportPhone },
+      { id: profileId, name: profileName, email: profileEmail, contato_whatsapp },
       ...savedProfiles.filter((p) => p.id !== profileId && p.email?.includes('@')),
     ].slice(0, 5);
 

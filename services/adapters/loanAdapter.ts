@@ -203,7 +203,7 @@ export function mapLoanFromDB(
     portalToken: asString(l?.portal_token ?? l?.portalToken),
     portalShortcode: asString(l?.portal_shortcode ?? l?.portalShortcode),
 
-    supportPhone: asString(l?.support_phone ?? l?.supportPhone),
+    contato_whatsapp: asString(l?.contato_whatsapp ?? l?.support_phone ?? l?.supportPhone),
 
     status: normalizeLoanStatus(l?.status),
 

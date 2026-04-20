@@ -373,14 +373,14 @@ const ClientPortalViewContent: React.FC<ClientPortalViewProps> = ({ initialPorta
     nextDueDate: globalSummary.nextDueDate
   });
 
-  const supportPhone = useMemo(() => {
-    return clientContracts[0]?.supportPhone || null;
+  const contato_whatsapp = useMemo(() => {
+    return clientContracts[0]?.contato_whatsapp || null;
   }, [clientContracts]);
 
   const handleSupportAction = () => {
-    if (supportPhone) {
+    if (contato_whatsapp) {
       const msg = `Olá, sou ${loggedClient.name} e preciso de suporte com meu contrato.`;
-      const cleanPhone = supportPhone.replace(/\D/g, '');
+      const cleanPhone = contato_whatsapp.replace(/\D/g, '');
       window.open(`https://wa.me/${cleanPhone.startsWith('55') ? '' : '55'}${cleanPhone}?text=${encodeURIComponent(msg)}`, '_blank');
     } else {
       setIsChatOpen(true);

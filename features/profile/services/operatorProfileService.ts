@@ -23,7 +23,7 @@ interface ProfileUpdatePayload {
   avatar_url?: string;
   brand_color?: string;
   logo_url?: string;
-  support_phone?: string;
+  contato_whatsapp?: string;
   default_interest_rate?: number;
   default_fine_percent?: number;
   default_daily_interest_percent?: number;
@@ -82,7 +82,7 @@ export const operatorProfileService = {
             avatar_url: curatedData.photo,
             brand_color: '#2563eb', // Força a cor padrão
             logo_url: curatedData.logoUrl,
-            support_phone: curatedData.supportPhone,
+            contato_whatsapp: curatedData.contato_whatsapp,
             default_interest_rate: curatedData.defaultInterestRate,
             default_fine_percent: curatedData.defaultFinePercent,
             default_daily_interest_percent: curatedData.defaultDailyInterestPercent,
@@ -140,7 +140,7 @@ export const operatorProfileService = {
                         address: row['Endereco'] || row['address'],
                         addressNumber: row['Numero'] || row['Nº'] || row['addressNumber'],
                         pixKey: row['Pix'] || row['Chave Pix'] || row['pixKey'],
-                        supportPhone: row['Suporte'] || row['supportPhone'],
+                        contato_whatsapp: row['Suporte'] || row['supportPhone'] || row['contato_whatsapp'],
                         defaultInterestRate: row['Taxa Padrão'] || row['defaultInterestRate'],
                         targetCapital: row['Meta Capital'] || row['targetCapital']
                     };
@@ -172,7 +172,7 @@ export const operatorProfileService = {
             photo: raw.photo,
             brandColor: '#2563eb', // Força a cor padrão
             logoUrl: raw.logoUrl,
-            supportPhone: raw.supportPhone,
+            contato_whatsapp: raw.contato_whatsapp,
             defaultInterestRate: Math.abs(Number(raw.defaultInterestRate) || 30),
             defaultFinePercent: Math.abs(Number(raw.defaultFinePercent) || 2),
             defaultDailyInterestPercent: Math.abs(Number(raw.defaultDailyInterestPercent) || 1),
@@ -218,7 +218,7 @@ export const operatorProfileService = {
             createdAt: asString(dbProfile.created_at),
             brandColor: '#2563eb', // Cor original restaurada
             logoUrl: dbProfile.logo_url,
-            supportPhone: dbProfile.support_phone,
+            contato_whatsapp: dbProfile.contato_whatsapp,
             defaultInterestRate: asNumber(dbProfile.default_interest_rate),
             defaultFinePercent: asNumber(dbProfile.default_fine_percent),
             defaultDailyInterestPercent: asNumber(dbProfile.default_daily_interest_percent),
