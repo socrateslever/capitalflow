@@ -79,17 +79,26 @@ export const generateConfissaoDividaV2HTML = (
   const isSinglePayment = installments.length === 1;
   const installmentsCount = installments.length;
 
-  // Detecção Inteligente do Tipo de Contrato
+  // Detecção Inteligente do Tipo de Contrato por Modalidade
   let formaPagamento = "PAGAMENTO ÚNICO";
   let descricaoPagamento = `será quitado em <strong>PARCELA ÚNICA</strong>`;
+  let npTypeDesc = " em parcela única";
 
-  if (installmentsCount > 1) {
-    const cycle = data.billingCycle?.toUpperCase() || "MENSAL";
+  if (data.billingCycle === 'MONTHLY') {
     const valParcela = installments[0]?.amount ? numberToWordsBRL(installments[0].amount).toUpperCase() : FILL;
     const valFormatado = installments[0]?.amount ? `R$ ${Number(installments[0].amount).toLocaleString('pt-BR', {minimumFractionDigits: 2})}` : FILL;
-    
-    formaPagamento = `PARCELADO (${cycle})`;
-    descricaoPagamento = `será quitado de forma <strong>PARCELADA (${cycle})</strong>, em ${installmentsCount} parcelas de ${valFormatado} (${valParcela})`;
+    formaPagamento = `CRÉDITO PARCELADO (MENSAL)`;
+    descricaoPagamento = `será quitado de forma <strong>PARCELADA (MENSAL)</strong>, em ${installmentsCount || 1} parcelas mensais e sucessivas de ${valFormatado} (${valParcela})`;
+    npTypeDesc = `, em ${installmentsCount || 1} parcelas de ${valFormatado}`;
+  } else if (data.billingCycle === 'DAILY_FREE') {
+    formaPagamento = `CRÉDITO ROTATIVO SOB DEMANDA`;
+    descricaoPagamento = `será quitado sob o regime de <strong>CONTA-CORRENTE ROTATIVA</strong>, sem prazo de vencimento pré-fixado para o principal, incidindo encargos pro-rata die até a liquidação final. Os prazos de prestações indicados servem apenas para apuração e amortização periódica de juros`;
+    npTypeDesc = ` sob regime rotativo livre`;
+  } else {
+    // DAILY_FIXED_TERM ou default
+    formaPagamento = `CRÉDITO DE PRAZO FIXO (PAGAMENTO ÚNICO)`;
+    descricaoPagamento = `será quitado integralmente em <strong>PARCELA ÚNICA</strong> com prazo determinado e acrescido dos encargos contratados projetados`;
+    npTypeDesc = ` em parcela única integralizada na data acordada`;
   }
 
   const valParcelaFormatted = installments[0]?.amount ? `R$ ${Number(installments[0].amount).toLocaleString('pt-BR', {minimumFractionDigits: 2})}` : FILL;
@@ -225,7 +234,7 @@ export const generateConfissaoDividaV2HTML = (
         </div>
 
         <p>Valor: <strong>${safeText(vm.totalDebt)} (${valorExtenso})</strong></p>
-        <p>Na data de vencimento acordada, pagarei incondicionalmente a <strong>${safeText(vm.creditorName)}</strong>, CPF nº ${safeText(vm.creditorDoc)}, a quantia acima descrita${installmentsCount > 1 ? `, em ${installmentsCount} parcelas de ${valParcelaFormatted}` : ' em parcela única'}.</p>
+        <p>Na data de vencimento acordada, pagarei incondicionalmente a <strong>${safeText(vm.creditorName)}</strong>, CPF nº ${safeText(vm.creditorDoc)}, a quantia acima descrita${npTypeDesc}.</p>
         <p>Emitente (Devedor): <strong>${safeText(vm.debtorName)}</strong><br/>
         CPF: ${safeText(vm.debtorDoc)}</p>
         <p>Local: ${safeText(vm.city)}<br/>

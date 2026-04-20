@@ -109,7 +109,7 @@ export const DocumentTemplates = {
     `,
 
     // Seletor inteligente para compatibilidade reversa
-    confissaoDivida: (data: any) => (data.installments?.length || 0) > 1 
+    confissaoDivida: (data: any) => data.billingCycle === 'MONTHLY' 
         ? DocumentTemplates.confissaoDividaParcelado(data) 
         : DocumentTemplates.confissaoDividaUnico(data),
 
