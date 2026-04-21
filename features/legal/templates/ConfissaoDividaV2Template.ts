@@ -1,6 +1,6 @@
 import { LegalDocumentParams } from "../../../types";
 import { numberToWordsBRL } from "../../../utils/formatters";
-import { buildConfissaoDividaVM } from "../viewModels/confissaoVM";
+import { buildConfissaoDividaVM, buildConfissaoScenarioVM, formatConfissaoDateBR } from "../viewModels/confissaoVM";
 
 const FILL = "[PREENCHER]";
 
@@ -10,14 +10,10 @@ const safeText = (value: unknown): string => {
   return text.length > 0 ? text : FILL;
 };
 
-const safeDateBR = (value: unknown): string => {
-  if (!value) return FILL;
-  const date = new Date(String(value));
-  return Number.isNaN(date.getTime()) ? FILL : date.toLocaleDateString("pt-BR");
-};
-
-const safePercent = (value: unknown): string => {
-  if (value === null || value === undefined || value === "") return FILL;
+const safePercent = (value: unknown, fallback?: number): string => {
+  if (value === null || value === undefined || value === "") {
+    return fallback !== undefined ? String(fallback) : FILL;
+  }
   return String(value);
 };
 
@@ -39,13 +35,14 @@ export const generateConfissaoDividaV2HTML = (
   signatures: any[] = []
 ) => {
   const vm = buildConfissaoDividaVM(data);
+  const scenario = buildConfissaoScenarioVM(data);
 
   const findSig = (role: string) =>
     (signatures || []).find((s) => normalizeRole(safeRole(s)) === normalizeRole(role));
 
   const renderSignatureBlock = (role: string, name: string, doc: string) => {
     const sig = findSig(role);
-    const displayRole = role.replace('DEBTOR', 'DEVEDOR').replace('CREDITOR', 'CREDOR').replace('WITNESS', 'TESTEMUNHA').replace('_', ' ');
+    const displayRole = role.replace("DEBTOR", "DEVEDOR").replace("CREDITOR", "CREDOR").replace("WITNESS", "TESTEMUNHA").replace("_", " ");
 
     return `
       <div style="text-align: center; border-top: 1.5pt solid #000; padding-top: 10px; position: relative; page-break-inside: avoid; margin-top: 60px; min-height: 80px;">
@@ -53,14 +50,14 @@ export const generateConfissaoDividaV2HTML = (
             <div style="position: absolute; top: -85px; left: 50%; transform: translateX(-50%); width: 90%; z-index: 10; pointer-events: none; display: flex; flex-direction: column; align-items: center;">
                 ${sig.assinatura_imagem ? `
                     <img src="${sig.assinatura_imagem}" style="max-height: 70px; max-width: 100%; object-fit: contain; margin-bottom: -15px; filter: contrast(150%) brightness(90%);" />
-                ` : ''}
+                ` : ""}
                 <div style="border: 1px solid #059669; color: #059669; padding: 6px 10px; font-family: sans-serif; font-size: 6pt; font-weight: bold; background: rgba(236, 253, 245, 0.95); border-radius: 6px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); line-height: 1.3; text-align: center; border-left: 4px solid #059669;">
-                    <span style="font-size: 7pt;">✓ ASSINATURA DIGITAL VÁLIDA</span><br/>
-                    <span style="opacity: 0.8;">MP 2.200-2/2001 • DATA: ${new Date(sig.signed_at).toLocaleString('pt-BR')}</span><br/>
-                    <span style="opacity: 0.8;">IP: ${sig.ip_origem} • HASH: ${sig.assinatura_hash?.substring(0, 12).toUpperCase()}</span>
+                    <span style="font-size: 7pt;">ASSINATURA DIGITAL VALIDA</span><br/>
+                    <span style="opacity: 0.8;">MP 2.200-2/2001 | DATA: ${new Date(sig.signed_at).toLocaleString("pt-BR")}</span><br/>
+                    <span style="opacity: 0.8;">IP: ${sig.ip_origem} | HASH: ${sig.assinatura_hash?.substring(0, 12).toUpperCase()}</span>
                 </div>
             </div>
-        ` : ''}
+        ` : ""}
         <b style="text-transform: uppercase; font-size: 11pt; display: block; margin-bottom: 2px;">${safeText(name)}</b>
         <span style="font-size: 9pt; color: #444; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px;">${displayRole}</span><br/>
         <small style="font-size: 8pt; color: #666;">DOC: ${safeText(doc)}</small>
@@ -68,82 +65,57 @@ export const generateConfissaoDividaV2HTML = (
     `;
   };
 
-  const totalDebtNumber = Number(data.totalDebt || 0);
+  const totalDebtNumber = Number(data.totalDebt || data.amount || 0);
   const valorExtenso = totalDebtNumber > 0 ? numberToWordsBRL(totalDebtNumber) : FILL;
-
-  const multa = safePercent(data.multaPercentual);
-  const juros = safePercent(data.jurosMensal);
+  const multa = safePercent(data.multaPercentual, 10);
+  const juros = safePercent(data.jurosMensal, 1);
   const honorarios = safePercent(data.honorariosPercentual);
-
-  const installments = Array.isArray(data.installments) ? data.installments : [];
-  const isSinglePayment = installments.length === 1;
-  const installmentsCount = installments.length;
-
-  // Detecção Inteligente do Tipo de Contrato por Modalidade
-  let formaPagamento = "PAGAMENTO ÚNICO";
-  let descricaoPagamento = `será quitado em <strong>PARCELA ÚNICA</strong>`;
-  let npTypeDesc = " em parcela única";
-  let textoObjeto = `no valor total de <strong>${safeText(vm.totalDebt)} (${valorExtenso})</strong>.`;
-
-  if (installmentsCount > 1) {
-    const cycle = data.billingCycle === 'DAILY_FREE' ? 'ROTATIVO' : 'MENSAL';
-    const valParcela = installments[0]?.amount ? numberToWordsBRL(installments[0].amount).toUpperCase() : FILL;
-    const valFormatado = installments[0]?.amount ? `R$ ${Number(installments[0].amount).toLocaleString('pt-BR', {minimumFractionDigits: 2})}` : FILL;
-    formaPagamento = `CRÉDITO PARCELADO (${cycle})`;
-    descricaoPagamento = `será quitado de forma <strong>PARCELADA (${cycle})</strong>, em ${installmentsCount} parcelas sucessivas de ${valFormatado} (${valParcela})`;
-    npTypeDesc = `, em ${installmentsCount} parcelas de ${valFormatado}`;
-    textoObjeto = `no valor total de <strong>${safeText(vm.totalDebt)} (${valorExtenso})</strong>, montante este que será adimplido de forma parcelada em ${installmentsCount} vezes.`;
-  } else if (data.billingCycle === 'DAILY_FREE') {
-    formaPagamento = `CRÉDITO ROTATIVO SOB DEMANDA`;
-    descricaoPagamento = `será quitado sob o regime de <strong>CONTA-CORRENTE ROTATIVA</strong>, sem prazo de vencimento pré-fixado para o principal, incidindo encargos pro-rata die até a liquidação final. Os prazos de prestações indicados servem apenas para apuração e amortização periódica de juros`;
-    npTypeDesc = ` sob regime rotativo livre`;
-  } else {
-    // Pagamento Único (Mensal Total, Renegociação à vista, ou Prazo Fixo)
-    formaPagamento = `CRÉDITO (PAGAMENTO ÚNICO)`;
-    descricaoPagamento = `será quitado integralmente em <strong>PARCELA ÚNICA</strong> com prazo determinado e acrescido dos encargos contratados projetados`;
-    npTypeDesc = ` em parcela única integralizada na data acordada`;
-  }
-
-  const valParcelaFormatted = installments[0]?.amount ? `R$ ${Number(installments[0].amount).toLocaleString('pt-BR', {minimumFractionDigits: 2})}` : FILL;
-
-  const primeiroVencimento = installments[0]?.dueDate
-    ? safeDateBR(installments[0].dueDate)
-    : FILL;
 
   let clauseNumber = 5;
   const extraClauses: string[] = [];
 
+  if (scenario.isAgreement) {
+    extraClauses.push(`
+      <h2>CLAUSULA ${clauseNumber} - DA AUSENCIA DE NOVACAO</h2>
+      <p>${scenario.nonNovationClause}</p>
+    `);
+    clauseNumber += 1;
+  }
+
   if (data.incluirGarantia) {
     extraClauses.push(`
-      <h2>CLÁUSULA ${clauseNumber} - DA GARANTIA</h2>
-      <p>Para assegurar o cumprimento da obrigação, o DEVEDOR oferece como garantia:</p>
+      <h2>CLAUSULA ${clauseNumber} - DA GARANTIA</h2>
+      <p>Para assegurar o cumprimento da obrigacao, o DEVEDOR oferece a seguinte garantia:</p>
       <p>Tipo: ${safeText(data.tipoGarantia)}<br/>
-      Descrição: ${safeText(data.descricaoGarantia)}</p>
-      <p>A garantia poderá ser executada em caso de inadimplência, independentemente de notificação judicial.</p>
+      Descricao: ${safeText(data.descricaoGarantia)}</p>
+      <p>A garantia podera ser executada em caso de inadimplemento, independentemente de notificacao adicional.</p>
     `);
     clauseNumber += 1;
   }
 
   if (data.incluirAvalista) {
     extraClauses.push(`
-      <h2>CLÁUSULA ${clauseNumber} - DO AVALISTA</h2>
-      <p>O AVALISTA abaixo identificado assume responsabilidade solidária pelo pagamento integral da dívida.</p>
+      <h2>CLAUSULA ${clauseNumber} - DO AVALISTA</h2>
+      <p>O AVALISTA abaixo identificado assume responsabilidade solidaria pelo pagamento integral da divida confessada.</p>
       <p>AVALISTA: ${safeText(data.avalistaNome)}<br/>
       CPF: ${safeText(data.avalistaCPF)}<br/>
-      ENDEREÇO: ${safeText(data.avalistaEndereco)}</p>
+      ENDERECO: ${safeText(data.avalistaEndereco)}</p>
     `);
     clauseNumber += 1;
   }
 
   if (data.incluirPenhoraAutomatica) {
     extraClauses.push(`
-      <h2>CLÁUSULA ${clauseNumber} - DA AUTORIZAÇÃO DE PENHORA</h2>
-      <p>O DEVEDOR autoriza expressamente, em caso de inadimplemento, a constrição judicial de bens suficientes à satisfação da dívida.</p>
+      <h2>CLAUSULA ${clauseNumber} - DA RESPONSABILIDADE PATRIMONIAL</h2>
+      <p>O DEVEDOR declara ciencia de que responde pelo cumprimento da obrigacao com seus bens presentes e futuros, facultando ao CREDOR adotar as medidas judiciais cabiveis para satisfacao do credito.</p>
     `);
     clauseNumber += 1;
   }
 
   const foroClauseNumber = clauseNumber;
+  const notaPromissoriaDescricao = scenario.isRenegotiatedInstallmentPlan
+    ? `em ${scenario.installmentsCount} parcelas sucessivas`
+    : `em parcela unica com vencimento em ${scenario.firstDueDate}`;
 
   return `
   <!DOCTYPE html>
@@ -167,7 +139,8 @@ export const generateConfissaoDividaV2HTML = (
   <body>
     <div class="container">
       <div class="header-box">
-        <h1>INSTRUMENTO PARTICULAR DE CONFISSÃO DE DÍVIDA E PROMESSA DE PAGAMENTO</h1>
+        <h1>INSTRUMENTO PARTICULAR DE CONFISSAO DE DIVIDA</h1>
+        <p style="margin: 12px 0 0 0; font-weight: bold;">${scenario.documentSubtitle}</p>
       </div>
 
       ${
@@ -175,35 +148,30 @@ export const generateConfissaoDividaV2HTML = (
           ? `<div style="margin-bottom: 40px;">${data.customContent}</div>`
           : `
         <p><strong>PARTES</strong></p>
-        <p><strong>CREDOR:</strong> ${safeText(vm.creditorName)}, ${safeText(vm.creditorNationality)}, ${safeText(vm.creditorMaritalStatus)}, ${safeText(vm.creditorProfession)}, portador do RG nº ${safeText(vm.creditorRG)} e CPF nº ${safeText(vm.creditorDoc)}, residente e domiciliado na ${safeText(vm.creditorAddress)}.</p>
-        <p><strong>DEVEDOR:</strong> ${safeText(vm.debtorName)}, ${safeText(vm.debtorNationality)}, ${safeText(vm.debtorMaritalStatus)}, ${safeText(vm.debtorProfession)}, portador do RG nº ${safeText(vm.debtorRG)} e CPF nº ${safeText(vm.debtorDoc)}, residente e domiciliado na ${safeText(vm.debtorAddress)}.</p>
+        <p><strong>CREDOR:</strong> ${safeText(vm.creditorName)}, ${safeText(vm.creditorNationality)}, ${safeText(vm.creditorMaritalStatus)}, ${safeText(vm.creditorProfession)}, portador do RG n. ${safeText(vm.creditorRG)} e CPF n. ${safeText(vm.creditorDoc)}, residente e domiciliado na ${safeText(vm.creditorAddress)}.</p>
+        <p><strong>DEVEDOR:</strong> ${safeText(vm.debtorName)}, ${safeText(vm.debtorNationality)}, ${safeText(vm.debtorMaritalStatus)}, ${safeText(vm.debtorProfession)}, portador do RG n. ${safeText(vm.debtorRG)} e CPF n. ${safeText(vm.debtorDoc)}, residente e domiciliado na ${safeText(vm.debtorAddress)}.</p>
 
-        <h2>CLÁUSULA 1 - DO RECONHECIMENTO DA DÍVIDA</h2>
-        <p>O DEVEDOR declara e reconhece, de forma irrevogável e irretratável, que possui uma dívida líquida, certa e exigível com o CREDOR ${textoObjeto}</p>
-        <p><strong>PARÁGRAFO ÚNICO:</strong> O presente instrumento constitui Título Executivo Extrajudicial, nos termos do Artigo 784, inciso III, do Código de Processo Civil, apto a embasar execução judicial imediata.</p>
+        <h2>CLAUSULA 1 - DO RECONHECIMENTO DA DIVIDA</h2>
+        <p>O DEVEDOR declara e reconhece, de forma irrevogavel e irretratavel, possuir divida liquida, certa e exigivel perante o CREDOR, no valor total de <strong>${safeText(vm.totalDebt)} (${valorExtenso})</strong>, decorrente de ${safeText(vm.originDescription)}.</p>
+        <p><strong>PARAGRAFO UNICO:</strong> O presente instrumento constitui titulo executivo extrajudicial, nos termos do artigo 784, inciso III, do Codigo de Processo Civil.</p>
 
-        <h2>CLÁUSULA 2 - DA FORMA DE PAGAMENTO</h2>
-        <p>O débito confessado ${descricaoPagamento}, com vencimento em ${primeiroVencimento}.</p>
-        <p><strong>PAGAMENTO:</strong> O pagamento deverá ser efetuado diretamente ao CREDOR, servindo o comprovante de transferência ou depósito como recibo definitivo de quitação.</p>
+        <h2>CLAUSULA 2 - DA FORMA DE PAGAMENTO</h2>
+        <p>O debito confessado ${scenario.paymentDescription}.</p>
+        <p><strong>PAGAMENTO:</strong> O pagamento devera ser efetuado diretamente ao CREDOR, servindo o comprovante de transferencia, deposito ou meio equivalente como recibo da parcela ou da quitacao integral.</p>
 
-        <h2>CLÁUSULA 3 - DOS ENCARGOS POR ATRASO (MORA)</h2>
-        <p>O não pagamento na data estipulada na Cláusula 2ª implicará, independente de notificação:</p>
-        <ol>
-          <li>Vencimento imediato da dívida integral;</li>
-          <li>Incidência de multa moratória de ${multa}% sobre o valor total;</li>
-          <li>Juros de mora de ${juros}% ao mês;</li>
-          <li>Honorários advocatícios de ${honorarios}% em caso de cobrança judicial.</li>
-        </ol>
+        <h2>CLAUSULA 3 - DOS ENCARGOS POR ATRASO</h2>
+        <p>O atraso no cumprimento de qualquer obrigacao prevista neste instrumento acarretara multa moratoria de ${multa}% sobre o valor inadimplido, juros de mora de ${juros}% ao mes e vencimento antecipado do saldo exigivel.</p>
+        ${honorarios !== FILL ? `<p><strong>PARAGRAFO UNICO:</strong> Em caso de cobranca judicial, poderao ser exigidos honorarios advocaticios de ${honorarios}%.</p>` : ""}
 
-        <h2>CLÁUSULA 4 - DA RESPONSABILIDADE PATRIMONIAL E MEDIDAS COERCITIVAS</h2>
-        <p>O DEVEDOR declara estar ciente de que responde pelo cumprimento desta obrigação com todos os seus bens presentes e futuros (Art. 789 do CPC). Em caso de mora, fica o CREDOR autorizado a requerer o bloqueio de ativos financeiros via SISBAJUD, restrição de veículos via RENAJUD e a inclusão do nome do DEVEDOR nos órgãos de proteção ao crédito (SPC/SERASA).</p>
+        <h2>CLAUSULA 4 - DA EXIGIBILIDADE IMEDIATA</h2>
+        <p>Configurado o inadimplemento, o CREDOR podera promover imediatamente a cobranca extrajudicial e judicial do debito, inclusive execucao do presente titulo, independentemente de aviso ou interpelacao.</p>
 
         ${extraClauses.join("\n")}
 
-        <h2>CLÁUSULA ${foroClauseNumber} - DO FORO</h2>
-        <p>As partes elegem o foro da Comarca de ${safeText(vm.city)} para dirimir quaisquer dúvidas oriundas deste instrumento.</p>
+        <h2>CLAUSULA ${foroClauseNumber} - DO FORO</h2>
+        <p>As partes elegem o foro da Comarca de ${safeText(vm.city)} para dirimir quaisquer duvidas oriundas deste instrumento, com renuncia a qualquer outro, por mais privilegiado que seja.</p>
 
-        <p style="margin-top: 30px;">${safeText(vm.city)}, ${safeDateBR(data.contractDate || vm.date)}.</p>
+        <p style="margin-top: 30px;">${safeText(vm.city)}, ${formatConfissaoDateBR(data.contractDate || new Date().toISOString())}.</p>
       `
       }
 
@@ -222,26 +190,26 @@ export const generateConfissaoDividaV2HTML = (
       <div style="margin-top: 80px; padding-top: 15px; border-top: 0.5pt solid #eee; font-family: sans-serif; font-size: 7pt; color: #888; display: flex; justify-content: space-between; align-items: flex-end;">
         <div style="flex: 1;">
             <strong>CapitalFlow Forensic Compliance:</strong><br/>
-            ID DOC: <code style="color: #444;">${docId || 'S/N'}</code> | HASH INTEGRIDADE: <code style="color: #444; font-weight: bold;">${hash?.toUpperCase() || 'AGUARDANDO_ASSINATURA'}</code><br/>
-            Certificado de integridade digital conforme MP 2.200-2/2001. Validade jurídica plena.
+            ID DOC: <code style="color: #444;">${docId || "S/N"}</code> | HASH INTEGRIDADE: <code style="color: #444; font-weight: bold;">${hash?.toUpperCase() || "AGUARDANDO_ASSINATURA"}</code><br/>
+            Certificado de integridade digital conforme MP 2.200-2/2001. Validade juridica plena.
         </div>
         <div style="text-align: right; margin-left: 20px; white-space: nowrap;">
-            Página 1 de 1
+            Pagina 1 de 1
         </div>
       </div>
 
       <div class="nota-promissoria">
         <div class="np-header">
-          <div class="np-title">NOTA PROMISSÓRIA</div>
+          <div class="np-title">NOTA PROMISSORIA</div>
           <div class="np-value">${safeText(vm.totalDebt)}</div>
         </div>
 
         <p>Valor: <strong>${safeText(vm.totalDebt)} (${valorExtenso})</strong></p>
-        <p>Na data de vencimento acordada, pagarei incondicionalmente a <strong>${safeText(vm.creditorName)}</strong>, CPF nº ${safeText(vm.creditorDoc)}, a quantia acima descrita${npTypeDesc}.</p>
+        <p>Na data de vencimento ajustada, pagarei incondicionalmente a <strong>${safeText(vm.creditorName)}</strong>, CPF n. ${safeText(vm.creditorDoc)}, a quantia acima descrita ${notaPromissoriaDescricao}.</p>
         <p>Emitente (Devedor): <strong>${safeText(vm.debtorName)}</strong><br/>
         CPF: ${safeText(vm.debtorDoc)}</p>
         <p>Local: ${safeText(vm.city)}<br/>
-        Data: ${safeDateBR(data.contractDate || vm.date)}</p>
+        Data: ${formatConfissaoDateBR(data.contractDate || new Date().toISOString())}</p>
 
         <div style="margin-top: 40px; border-top: 1px solid #000; width: 60%; text-align: center; padding-top: 5px;">
           Assinatura do Devedor
